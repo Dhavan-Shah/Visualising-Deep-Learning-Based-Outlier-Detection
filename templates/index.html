@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<body>
+
+<div id="myPlot" style="width:100%;max-width:700px"></div>
+<select id ='selectvalue'>
+</select>
+
+<script>
+//var xArray = [50,60,70,80,90,100,110,120,130,140,150];
+//var yArray = [7,8,8,9,9,9,10,11,14,14,15];
+
+var xArray = document.getElementById("myPlot"), test = [ name ]; //{{ name | tojson }};
+var yArray = document.getElementById("selectvalue"), test = [ val ];
+for(var i = 0; i < test.length; i++) // This line checks for the length of the data you feeding in i.e the no of items
+         {
+            var selection = document.createElement("OPTION"), // This line creates a variable to store the different values fed in from the JSON object "TEST"
+            txt = document.createTextNode(test[i]); // This just reads each value from the test JSON variable above
+            selection.appendChild(txt); // This line appends each value as it is read.
+            selection.setAttribute("value",test[i]); // This line sets each value read in as a value for the drop down
+            selectvalue.insertBefore(selection,selectvalue.lastChild); //This reads eah value into the dropdown based on the order in the "TEST" above.
+        }
+// Define Data
+var data = [{
+  x:xArray,
+  y:yArray,
+  mode:"markers"
+}];
+
+// Define Layout
+var layout = {
+  xaxis: {range: [0, 16], title: "Square Meters"},
+  yaxis: {range: [0, 16], title: "Price in Millions"},  
+  title: "House Prices vs. Size"
+};
+
+// Display using Plotly
+Plotly.newPlot("myPlot", data, layout);
+</script>
+
+</body>
+</html>
+
+

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pass Python variable to Javascript</title>
+</head>
+<body>
+
+<select id ='selectvalue'>
+</select>
+<select id = 'selectval'>
+</select>
+<script>
+
+    var selectvalue = document.getElementById("selectvalue"), test = {{ name | tojson }};
+    //var selectval = document.getElementById("selectval"), te = {{ val | tojson }};
+    //The increment operator (++) increments (adds one to) its operand and returns a value.
+    for(var i = 0; i < test.length; i++) // This line checks for the length of the data you feeding in i.e the no of items
+         {
+            var selection = document.createElement("OPTION"), // This line creates a variable to store the different values fed in from the JSON object "TEST"
+            txt = document.createTextNode(test[i]); // This just reads each value from the test JSON variable above
+            selection.appendChild(txt); // This line appends each value as it is read.
+            selection.setAttribute("value",test[i]); // This line sets each value read in as a value for the drop down
+            selectvalue.insertBefore(selection,selectvalue.lastChild); //This reads eah value into the dropdown based on the order in the "TEST" above.
+        }
+
+</script>
+</body>
+</html>
