@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content = 'IE=edge'>
+        <title>pyod</title>
+        <meta name='viewport' content='width=device-width, initial-scale=1'>
+        <link rel="stylesheet" type="'text/css" media="creen" href="main.css">
+        <script src="main.js"></script>
+        <script src='https://cdn.plot.ly/plotly-2.14.0.min.js'></script>
+    </head>
+    <body>
+        <div id='myDiv'></div>
+        <h1>pyod</h1>
+        <h2>Data Information: </h2>
+        <script type="text/javascript" src="declare.js"></script>
+        <script>
+            var jsonforreal=JSON.parse(new_list);
+            document.write("The number of data is " ,jsonforreal.X_train.length)
+            
+            
+            //show all values 
+            for (i=0; i < jsonforreal.X_train.length; i++){
+                
+                document.write('<br>x : ', jsonforreal.X_train[i][0]);
+                document.write(' y : ', jsonforreal.X_train[i][1]);
+        
+            } 
+        </script>
+    </body>
+</html>
