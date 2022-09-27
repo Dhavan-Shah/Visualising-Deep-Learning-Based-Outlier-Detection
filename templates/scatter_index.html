@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<body>
+    <div id="myPlot" style="width:100%;max-width:700px"></div>
+    <script>
+        var xArray= {{ x_value | tojson }};
+        //document.write(xArray);
+        var yArray= {{ y_value | tojson }};
+        
+  
+        // Define Data
+        var data = [{
+            x: xArray,
+            y: yArray,
+            mode: "markers"
+        }];
+
+        // Define Layout
+        var layout = {
+            xaxis: { range: [0, 16], title: "x" },
+            yaxis: { range: [0, 16], title: "y" },
+            title: "Outlier Detection"
+        };
+
+        // Display using Plotly
+        Plotly.newPlot("myPlot", data, layout);
+    </script>
+</body>
+</html>
