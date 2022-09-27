@@ -1,21 +1,51 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <style>
+        .button {
+          border: none;
+          color: white;
+          padding: 10px 20px;
+          text-align: center;
+          text-decoration: none;
+          display: display-legacy;
+          font-size: 16px;
+          margin: 4px 2px;
+          cursor: pointer;
+        }
+        
+        .button1 {background-color: #4CAF50;} /* Green */
+        .button2 {background-color: #ba0000;} /* Blue */
+        </style>
+</head>
+
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <body>
     <div id="myPlot" style="width:100%;max-width:700px"></div>
     <script>
-        var xArray= {{ x_value | tojson }};
-        //document.write(xArray);
-        var yArray= {{ y_value | tojson }};
+        var in_xArray= {{ in_x_value | tojson }};
+        var in_yArray= {{ in_y_value | tojson }};
+        var outlier_xArray= {{ outlier_x_value | tojson }};
+     //   document.write(outlier_xArray);
+        var outlier_yArray= {{ outlier_y_value | tojson }};
+     //   document.write(outlier_yArray);
         
   
         // Define Data
-        var data = [{
-            x: xArray,
-            y: yArray,
-            mode: "markers"
-        }];
-
+        var inliers = {
+            x: in_xArray,
+            y: in_yArray,
+            mode: "markers",
+            type: 'scatter'
+        };
+        var outliers = {
+            x: outlier_xArray,
+            y: outlier_yArray,
+            mode: "markers",
+            type: 'scatter'
+        };
+        
+        var data=[inliers, outliers];
         // Define Layout
         var layout = {
             xaxis: { range: [0, 16], title: "x" },
@@ -26,5 +56,9 @@
         // Display using Plotly
         Plotly.newPlot("myPlot", data, layout);
     </script>
+
+<button class="button button1">Inliers</button>
+<button class="button button2">Outliers</button>
+
 </body>
 </html>
