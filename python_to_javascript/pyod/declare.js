@@ -2,18 +2,45 @@ var new_list = `{"X_train": [[6.433658544295078, 5.509168303351839], [5.04469788
 
 
 var obj = JSON.parse(new_list);
-var x_value = obj.X_train.map(function(x) {return x[0];});
-var y_value = obj.X_train.map(function(x) {return x[1];});
-console.log(x_value)
-console.log(y_value)
+var color_list = obj.y_train;
+var out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
+let outlier = obj.X_train.filter((_, ind) => out_indices.includes(ind));
+var in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
+let inlier=obj.X_train.filter((_, ind) => in_indices.includes(ind));
+var out_x = outlier.map(function(v) {return v[0];});
+var out_y = outlier.map(function(v) {return v[1];});
+var in_x = inlier.map(function(v) {return v[0];});
+var in_y = inlier.map(function(v) {return v[1];});
+var all_x=obj.X_train.map(function(v) {return v[0];});
+var all_y=obj.X_train.map(function(v) {return v[1];});
 
-var trace1 = {
-    x: x_value,
-    y: y_value,
+var all_plot = {
+  x: all_x,
+  y: all_y,
+  mode: 'markers',
+  type: 'scatter',
+  name:'All',
+  marker:{color:'grey'}
+};
+
+
+var out_plot = {
+    x: out_x,
+    y: out_y,
     mode: 'markers',
-    type: 'scatter'
+    type: 'scatter',
+    name:'Outliers',
+    marker:{color:'red'}
   };
+
+var in_plot = {
+  x: in_x,
+  y: in_y,
+  mode: 'markers',
+  type: 'scatter',
+  name: 'Inliers',
+  marker:{color:'green'}
+};
+var data = [all_plot,out_plot,in_plot];
   
-  var data = [trace1];
-  
-  Plotly.newPlot('myDiv', data);
+Plotly.newPlot('myDiv', data);
