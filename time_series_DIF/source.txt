@@ -1,2 +1,12 @@
+#dots' color, size
 https://medium.com/learningdatascience/anomaly-detection-techniques-in-python-50f650c75aaf
 https://www.biorxiv.org/content/10.1101/2020.08.07.240473v1.full
+
+#frame
+https://bl.ocks.org/boeric/6a83de20f780b42fadb9
+
+#keep old data
+https://www.codegrepper.com/code-examples/javascript/store+previous+state+react
+
+#show old data and curret data
+https://blog.logrocket.com/accessing-previous-props-state-react-hooks/
