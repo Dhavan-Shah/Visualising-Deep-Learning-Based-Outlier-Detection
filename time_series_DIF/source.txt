@@ -10,3 +10,24 @@ https://www.codegrepper.com/code-examples/javascript/store+previous+state+react
 
 #show old data and curret data
 https://blog.logrocket.com/accessing-previous-props-state-react-hooks/
+
+
+#file uploading
+https://www.geeksforgeeks.org/file-uploading-in-react-js/
+
+#highlight outlier
+https://d3-graph-gallery.com/graph/scatter_grouped_highlight.html
+
+#checkbox outlier - onChange
+https://codesandbox.io/s/pxmrpb?file=/demo.tsx
+https://d3-graph-gallery.com/graph/bubblemap_buttonControl.html
+
+#parallel graph
+https://d3-graph-gallery.com/graph/parallel_custom.html
+
+#opacity, widget(zoom)
+https://bl.ocks.org/EfratVil/2bcc4bf35e28ae789de238926ee1ef05
+https://codepen.io/pen
+
+#etc
+https://github.com/aware-diag-sapienza/crosswidget
