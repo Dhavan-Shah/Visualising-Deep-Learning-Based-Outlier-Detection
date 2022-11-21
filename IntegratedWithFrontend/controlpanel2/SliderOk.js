@@ -65,7 +65,7 @@ class SliderOk extends React.Component {
     }
     console.log("MISCAL");
     console.log(miscal);
-    const newdata={XYData:qs.stringify(miscal),color_list:'[1,0]',n:'100',Total:'100',NumberofData:'100'};
+    const newdata={XYData:qs.stringify(miscal),color_list:'[1,0]',n:this.state.value.toString(),Total:'100',NumberofData:'100'};
     let data = qs.stringify(newdata)
     console.log("data!!:",qs.parse(data))
     axios.post(`http://localhost:5000/BackendData`,data,
