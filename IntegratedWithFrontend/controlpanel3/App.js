@@ -74,7 +74,7 @@ const App = () => {
         console.log("Nbatch : ",Nbatch)
         const Threshold=res.data.Threshold;
         console.log("Threshold : ",Threshold)
-
+        
         out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         outlier = DATA.filter((_, ind) => out_indices.includes(ind));
         in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
@@ -91,6 +91,7 @@ const App = () => {
 				// Set up chart
         const w=600;
         const h=400;
+       
 				const svg = d3.select(svgRef.current)
 								.attr('width', w)
 								.attr('height', h)
@@ -119,17 +120,9 @@ const App = () => {
         //storing values in array
         console.log(val);
 
-        /* 
-        // setting up axis
-        const xAxis = d3.axisBottom(xScale).ticks(5);
-        const yAxis = d3.axisLeft(yScale).ticks(10);
-        svg.append('g')
-          .call(xAxis)
-          .attr('transform', `translate(0, ${h})`);
-        svg.append('g')
-          .call(yAxis) */
+        
 
-        svg.selectAll()
+        svg.selectAll('p')
           .data(outlier).enter()
           .append('circle')
             .attr('cx',d=>xScale(d[0]))
@@ -138,7 +131,7 @@ const App = () => {
             .attr('opacity',"0.3")
             .attr('r',2);
         
-        svg.selectAll()
+        svg.selectAll('p')
           .data(inlier).enter()
           .append('circle')
             .attr('cx',d=>xScale(d[0]))
@@ -153,24 +146,28 @@ const App = () => {
           .domain(keys)
           .range(["red","green","yellow"]);
 
-        svg.selectAll()
-          .data(keys).enter()
-          .append("circle")
-            .attr("cx", 350)
-            .attr("cy", 20) // 100 is where the first dot appears. 25 is the distance between dots
-            .attr("r", 5)
-            .attr('fill',function(d){ return C(d)});
-            
+        
+        var svg1 = d3.select("body").append("svg");
+
+        svg.selectAll(".rect")
+          .data([15,30,45])
+          .enter()
+          .append("rect")
+          .attr("width", 10)
+          .attr("height", 10)
+          .attr("x", 310)
+          .attr("y", function(d) {return d})
+          .attr("fill", function(d){ return C(d)})
 
         svg.selectAll("mylabels")
         .data(keys).enter()
         .append("text")
-          .attr("x", 350)
+          .attr("x", 330)
           .attr("y", function(d,i){ return 20+ i*15 }) // 100 is where the first dot appears. 25 is the distance between dots
           .style("fill", function(d){ return C(d)})
           .text(function(d){ return d})
           .attr("text-anchor", "left")
-          .attr("font-size", "10px")
+          .attr("font-size", "8px")
           .style("alignment-baseline", "middle");
 
         const Dataval = svg
