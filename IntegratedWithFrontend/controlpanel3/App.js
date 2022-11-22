@@ -95,8 +95,7 @@ const App = () => {
 				const svg = d3.select(svgRef.current)
 								.attr('width', w)
 								.attr('height', h)
-								.style('overflow','visible')
-                .style('margin-top','50px');
+								.style('overflow','visible');
 				// x axis scale 
 				const xScale = d3.scaleLinear()
           .domain([0, 5])
