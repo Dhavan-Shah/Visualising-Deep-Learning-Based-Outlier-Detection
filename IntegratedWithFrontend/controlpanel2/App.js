@@ -1,11 +1,12 @@
 import React,{useRef, useState} from 'react';
+import Slider, { createSliderWithTooltip } from "rc-slider";
+import "rc-slider/assets/index.css";
 import axios from 'axios';
+import {  Select,Button ,Layout,Divider} from 'antd';
 import * as d3 from 'd3';
-import SliderOk from './SliderOk'
-import styled from 'styled-components';
-import {Progress, Button,Layout,Divider, Space } from 'antd';
-import "./App.css"
 
+import "./App.css"
+//https://stackoverflow.com/questions/63905902/how-to-get-value-of-dropdown-component-in-ant-design-antd-react-js
 var qs = require('qs');
 
 var rowno=0;
@@ -14,7 +15,187 @@ var out_indices = [];
 var outlier = [];
 var in_indices = [];
 var inlier=[];
-var NumProgress=[];
+
+
+class SliderOk extends React.Component {
+  constructor(props) {
+    super(props);
+
+    
+    this.state = {
+      value1: 3,
+      value2: 0.3,
+      value3:3000 ,
+      selectValue:'HR_diagram.csv'
+      
+    };
+    this.handleClick = this.handleClick.bind(this);
+  }
+  
+  
+  onSliderChange1 = value1 => {
+    this.setState(
+      {
+        value1
+      },
+      () => {
+        var SliderValue=this.state.value1     
+        console.log("Slider value: ",SliderValue);
+      }     
+    );
+    
+  };
+
+  onSliderChange2 = value2 => {
+    this.setState(
+      {
+        value2
+      },
+      () => {
+        var SliderValue=this.state.value2   
+        console.log("Slider value: ",SliderValue);
+      }     
+    );
+    
+  };
+  onSliderChange3 = value3 => {
+    this.setState(
+      {
+        value3
+      },
+      () => {
+        var SliderValue=this.state.value3   
+        console.log("Slider value: ",SliderValue);
+      }     
+    );
+    
+  };
+  dropdownChange=e=>{
+    this.setState({selectValue:e.target.value});
+  };
+
+  
+
+  handleClick()  {
+    var z = val.length;
+    var miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
+    console.log("X --------- X ---------- Y -------------- Y")
+    for(var i=0;i<z;i++)
+    {
+      for(var j=0;j<outlier.length;j++)
+      {
+        //console.log(val[i][0], outlier[j][0],Math.abs(val[i][0]-outlier[j][0]),"---", val[i][1], outlier[j][1],Math.abs(val[i][1]-outlier[j][1]));
+        if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
+        {
+          console.log("Yessss");
+          var x = outlier[j][0];
+          var y = outlier[j][1];
+          miscal.push([x,y,0,out_indices[j]]);
+        }
+      }
+      for(var j=0;j<inlier.length;j++)
+      {
+        if(Math.abs(val[i][0]-inlier[j][0]) < 0.0001 && Math.abs(val[i][1]-inlier[j][1]) < 0.0001)
+        {
+          var x = inlier[j][0];
+          var y = inlier[j][1];
+          miscal.push([x,y,1,in_indices[j]]);
+        }
+      }
+    }
+    console.log("MISCAL");
+    console.log(miscal);
+    const newdata={XYData:qs.stringify(miscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString()};
+    let data = qs.stringify(newdata)
+    console.log("data!!:",qs.parse(data))
+    axios.post(`http://localhost:5000/BackendData`,data,
+    {
+        headers:{
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    })  
+  };
+
+  render() {
+   
+    return (
+      <div style={{marginLeft: 30,marginRight: 30}} >
+        <p style={{fontSize: "10px",color:"grey"}}>Uploading Dataset :</p>
+        <Select value={this.state.selectValue} onChange={this.dropdownChange} >
+          <option value="arxiv_articles_UMAP.csv">arxiv_articles_UMAP.csv</option>
+          <option value="HR_diagram.csv">HR_diagram.csv</option> 
+        </Select>
+        <br></br>
+        <br></br>
+        <p style={{fontSize: "10px",color:"grey"}}>Number of Frames: {this.state.value1}</p>
+        <Slider 
+          min={0}
+          max={10}
+          value={this.state.value1}
+          onChange={this.onSliderChange1}
+          railStyle={{ height: 4, }}
+          handleStyle={{
+            height: 20,
+            width: 20,
+            marginLeft: -8,
+            marginTop: -8,
+            backgroundColor: "MediumPurple",
+            border: 0
+          }}
+          trackStyle={{ background: "none" }}
+        />
+        
+        <p style={{fontSize: "10px",color:"grey"}}>Threshold : {this.state.value2}</p>
+        <Slider 
+          min={0.0}
+          max={1.0}
+          step={0.01}
+          value={this.state.value2}
+          onChange={this.onSliderChange2}
+          railStyle={{ height: 4, }}
+          handleStyle={{
+            height: 20,
+            width: 20,
+            
+            marginLeft: -8,
+            marginTop: -8,
+            backgroundColor: "MediumPurple",
+            border: 0
+          }}
+          trackStyle={{ background: "none" }}
+        />
+        <p style={{fontSize: "10px",color:"grey"}}>Batch size : {this.state.value3}</p>
+        <Slider 
+          min={1000}
+          max={10000}
+          step={10} // you can change this step size
+          value={this.state.value3}
+          onChange={this.onSliderChange3}
+          railStyle={{ height: 4, }}
+          handleStyle={{
+            height: 20,
+            width: 20,
+            
+            marginLeft: -8,
+            marginTop: -8,
+            backgroundColor: "MediumPurple",
+            border: 0
+          }}
+          trackStyle={{ background: "none" }}
+        />
+        <br></br>     
+        <Button size="small" onClick={this.handleClick} shape="round" style={{width:"180px",fontSize: "10px", color: "MediumPurple",background: "white", borderColor: "MediumPurple"}}>
+        Updating data on Backend
+        </Button>
+      </div>
+    );
+  } 
+}
+
+
+
+
+//var NumProgress=[];
 
 function myFunction(val) { 
   var table = document.getElementById("demo");
@@ -50,16 +231,10 @@ function myFunction2(val, index) {
   }
 }
 
-
-function TotalFunction2(Total,NumberofData) {
-  document.documentElement.percent.setProperty(`--text`, `'${NumProgress}'`);  
-}
-
-
-function TotalFunction(Total,NumberofData) {
+/* function TotalFunction(Total,NumberofData) {
   document.getElementById("Totaldemo").innerHTML = "Progress : "+(Total/NumberofData*100).toFixed(2);
   }
-
+ */
 
 const { Sider, Content} = Layout;
 
@@ -72,21 +247,18 @@ const App = () => {
     try {
     const data = await axios.get('http://localhost:5000/BackendData')
     .then(res => {
-      console.log(res.data.n)
         //divide data into variables
         const DATA = res.data.XYData;
         //console.log(DATA);
         const color_list=res.data.color_list;
-        //console.log(color_list);
-        const Total=res.data.Total;
-        console.log("TOTLA:",Total)
-        const NumberofData=res.data.NumberofData
-        console.log("NumberofData : ",NumberofData)
-        TotalFunction(Total,NumberofData);
-        NumProgress.push(TotalFunction);
-        TotalFunction2(Total,NumberofData);
-        
+        const Nbatch=res.data.Nbatch;
+        console.log("Nbatch : ",Nbatch)
+        const Threshold=res.data.Threshold;
+        console.log("Threshold : ",Threshold)
+        const BatchSize=res.data.BatchSize;
+        console.log("BatchSize :",BatchSize);
 
+        
         out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         outlier = DATA.filter((_, ind) => out_indices.includes(ind));
         in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
@@ -103,11 +275,11 @@ const App = () => {
 				// Set up chart
         const w=600;
         const h=400;
+       
 				const svg = d3.select(svgRef.current)
 								.attr('width', w)
 								.attr('height', h)
-								.style('overflow','visible')
-                .style('margin-top','50px');
+								.style('overflow','visible');
 				// x axis scale 
 				const xScale = d3.scaleLinear()
           .domain([0, 5])
@@ -131,17 +303,9 @@ const App = () => {
         //storing values in array
         console.log(val);
 
-        /* 
-        // setting up axis
-        const xAxis = d3.axisBottom(xScale).ticks(5);
-        const yAxis = d3.axisLeft(yScale).ticks(10);
-        svg.append('g')
-          .call(xAxis)
-          .attr('transform', `translate(0, ${h})`);
-        svg.append('g')
-          .call(yAxis) */
+        
 
-        svg.selectAll()
+        svg.selectAll('p')
           .data(outlier).enter()
           .append('circle')
             .attr('cx',d=>xScale(d[0]))
@@ -150,7 +314,7 @@ const App = () => {
             .attr('opacity',"0.3")
             .attr('r',2);
         
-        svg.selectAll()
+        svg.selectAll('p')
           .data(inlier).enter()
           .append('circle')
             .attr('cx',d=>xScale(d[0]))
@@ -165,24 +329,28 @@ const App = () => {
           .domain(keys)
           .range(["red","green","yellow"]);
 
-        svg.selectAll()
-          .data(keys).enter()
-          .append("circle")
-            .attr("cx", 350)
-            .attr("cy", 20) // 100 is where the first dot appears. 25 is the distance between dots
-            .attr("r", 5)
-            .attr('fill',function(d){ return C(d)});
-            
+        
+        var svg1 = d3.select("body").append("svg");
+
+        svg.selectAll(".rect")
+          .data([15,30,45])
+          .enter()
+          .append("rect")
+          .attr("width", 10)
+          .attr("height", 10)
+          .attr("x", 310)
+          .attr("y", function(d) {return d})
+          .attr("fill", function(d){ return C(d)})
 
         svg.selectAll("mylabels")
         .data(keys).enter()
         .append("text")
-          .attr("x", 350)
+          .attr("x", 330)
           .attr("y", function(d,i){ return 20+ i*15 }) // 100 is where the first dot appears. 25 is the distance between dots
           .style("fill", function(d){ return C(d)})
           .text(function(d){ return d})
           .attr("text-anchor", "left")
-          .attr("font-size", "10px")
+          .attr("font-size", "8px")
           .style("alignment-baseline", "middle");
 
         const Dataval = svg
@@ -279,7 +447,7 @@ const App = () => {
               
                 <SliderOk/>
                 <Button size="small" shape="round" style={{ width:"180px",fontSize: "10px",color: "MediumPurple", marginLeft: 30,  marginTop: 5 ,background: "white", borderColor: "MediumPurple" }} onClick={SethandleClick}>Updating on Plot</Button>
-                <Progress style={{width:"180px",fontSize: "8px",color: "grey",marginLeft: 30,marginRight: 30}}
+                {/* <Progress style={{width:"180px",fontSize: "8px",color: "grey",marginLeft: 30,marginRight: 30}}
                   
                   percent={20}
                   status="active"
@@ -289,7 +457,7 @@ const App = () => {
                   }}
                 />
                 <table id="Totaldemo" style={{fontSize: "12px",color: "grey",marginLeft: 30}}>Progress : </table>     
-                
+                 */}
                 <Divider /> 
                 <p style={{fontSize: "12px",color: "grey",marginLeft: 30}}>Outliers</p>
                   <table id="outlier"></table>
@@ -309,7 +477,5 @@ const App = () => {
 };
 
 export default App;
-
-
 
 
