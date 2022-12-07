@@ -537,7 +537,7 @@ const App = () => {
       setData(prevState => ({
         ...prevState,
         FullData: FullDATA,
-        DATA : DATA
+        DATA : DATA,
         last_index:last_index
      }))
   })
