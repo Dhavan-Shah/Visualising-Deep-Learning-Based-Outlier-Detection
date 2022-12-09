@@ -1,7 +1,12 @@
-import  React,{useState, useRef,useEffect} from 'react';
+import React,{useRef, useState} from 'react';
+import Slider, { createSliderWithTooltip } from "rc-slider";
+import "rc-slider/assets/index.css";
 import axios from 'axios';
+import {  Select,Button ,Layout,Divider} from 'antd';
 import * as d3 from 'd3';
-import './App.css';
+
+import "./App.css"
+//https://stackoverflow.com/questions/63905902/how-to-get-value-of-dropdown-component-in-ant-design-antd-react-js
 var qs = require('qs');
 
 var rowno=0;
@@ -10,6 +15,222 @@ var out_indices = [];
 var outlier = [];
 var in_indices = [];
 var inlier=[];
+var last_index = [];
+var clicks = 0;
+
+
+
+class SliderOk extends React.Component {
+  constructor(props) {
+    super(props);
+
+    
+    this.state = {
+      value1: 4,
+      value2: 0.5,
+      value3: 1000 ,
+      selectValue:'HR_diagram.csv',
+      
+    };
+    this.handleClick = this.handleClick.bind(this);
+  }
+  
+  
+  onSliderChange1 = value1 => {
+    this.setState(
+      {
+        value1
+      },
+      () => {
+        var SliderValue=this.state.value1     
+        console.log("Slider value: ",SliderValue);
+      }     
+    );
+    
+  };
+
+  onSliderChange2 = value2 => {
+    this.setState(
+      {
+        value2
+      },
+      () => {
+        var SliderValue=this.state.value2   
+        console.log("Slider value: ",SliderValue);
+      }     
+    );
+    
+  };
+  onSliderChange3 = value3 => {
+    this.setState(
+      {
+        value3
+      },
+      () => {
+        var SliderValue=this.state.value3   
+        console.log("Slider value: ",SliderValue);
+      }     
+    );
+    
+  };
+  dropdownChange=e=>{
+    this.setState({selectValue:e.target.value});
+  };
+
+  
+
+  handleClick()  {
+    var z = val.length;
+    var miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
+    console.log("X --------- X ---------- Y -------------- Y")
+    for(var i=0;i<z;i++)
+    {
+      for(var j=0;j<outlier.length;j++)
+      {
+        //console.log(val[i][0], outlier[j][0],Math.abs(val[i][0]-outlier[j][0]),"---", val[i][1], outlier[j][1],Math.abs(val[i][1]-outlier[j][1]));
+        if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
+        {
+          console.log("Yessss");
+          var x = outlier[j][0];
+          var y = outlier[j][1];
+          miscal.push([x,y,0,out_indices[j]]);
+        }
+      }
+      for(var j=0;j<inlier.length;j++)
+      {
+        if(Math.abs(val[i][0]-inlier[j][0]) < 0.0001 && Math.abs(val[i][1]-inlier[j][1]) < 0.0001)
+        {
+          var x = inlier[j][0];
+          var y = inlier[j][1];
+          miscal.push([x,y,1,in_indices[j]]);
+        }
+      }
+    }
+
+    
+
+
+
+    console.log("TESTING INPUTS");
+    clicks += 1;
+    if(last_index.length == 0)
+    { 
+
+      last_index.push(Number(this.state.value3));
+    }
+    else
+    {
+      var temp = last_index.length;
+      console.log(temp, last_index[temp - 1]);
+      last_index.push( Number(last_index[temp-1]) + Number(this.state.value3));
+    }
+    var Threshold = this.state.selectValue2;
+    console.log(Threshold);
+
+    if(Threshold == "Comparitive Value")
+    {
+      Threshold = 0;
+    }
+    else
+    {
+      Threshold = this.state.value2; 
+    }
+    console.log(this.state.value1, Threshold, this.state.value3);
+    console.log(last_index);
+    console.log("MISCAL");
+    console.log(miscal);
+    const newdata={XYData:qs.stringify(miscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:Threshold.toString(),BatchSize:this.state.value3.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
+    let data = qs.stringify(newdata)
+    console.log("data!!:",qs.parse(data))
+    var table = document.getElementById("demo");
+    table.innerHTML = "";
+    axios.post(`http://localhost:5000/BackendData`,data,
+    {
+        headers:{
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    }) 
+    miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+    val = [];
+  };
+
+  render() {
+   
+    return (
+      <div style={{marginLeft: 30,marginRight: 30}} >
+        <p style={{fontSize: "10px",color:"grey"}}>Uploading Dataset :</p>
+        <Select value={this.state.selectValue} onChange={this.dropdownChange} >
+          <option value="arxiv_articles_UMAP.csv">arxiv_articles_UMAP.csv</option>
+          <option value="HR_diagram.csv">HR_diagram.csv</option> 
+        </Select>
+        <br></br>
+        <br></br>
+        <p style={{fontSize: "10px",color:"grey"}}>Number of Frames: {this.state.value1}</p>
+        <Slider 
+          min={0}
+          max={10}
+          value={this.state.value1}
+          onChange={this.onSliderChange1}
+          railStyle={{ height: 4, }}
+          handleStyle={{
+            height: 20,
+            width: 20,
+            marginLeft: -8,
+            marginTop: -8,
+            backgroundColor: "MediumPurple",
+            border: 0
+          }}
+          trackStyle={{ background: "none" }}
+        />
+        
+        <p style={{fontSize: "10px",color:"grey"}}>Threshold : {this.state.value2}</p>
+        <Slider 
+          min={0.0}
+          max={1.0}
+          step={0.01}
+          value={this.state.value2}
+          onChange={this.onSliderChange2}
+          railStyle={{ height: 4, }}
+          handleStyle={{
+            height: 20,
+            width: 20,
+            
+            marginLeft: -8,
+            marginTop: -8,
+            backgroundColor: "MediumPurple",
+            border: 0
+          }}
+          trackStyle={{ background: "none" }}
+        />
+        <p style={{fontSize: "10px",color:"grey"}}>Batch size : {this.state.value3}</p>
+        <Slider 
+          min={1000}
+          max={10000}
+          step={10} // you can change this step size
+          value={this.state.value3}
+          onChange={this.onSliderChange3}
+          railStyle={{ height: 4, }}
+          handleStyle={{
+            height: 20,
+            width: 20,
+            
+            marginLeft: -8,
+            marginTop: -8,
+            backgroundColor: "MediumPurple",
+            border: 0
+          }}
+          trackStyle={{ background: "none" }}
+        />
+        <br></br>     
+        <Button size="small" onClick={this.handleClick} shape="round" style={{width:"180px",fontSize: "10px", color: "MediumPurple",background: "white", borderColor: "MediumPurple"}}>
+        Updating data on Backend
+        </Button>
+      </div>
+    );
+  } 
+}
+
+
 
 
 function myFunction(val) { 
@@ -34,6 +255,7 @@ function myFunction(val) {
 
 function myFunction2(val, index) {
   var table = document.getElementById("outlier");
+  table.innerHTML = "";
   var j=0;
   for(j;j<index.length;j++)
   {
@@ -48,11 +270,13 @@ function myFunction2(val, index) {
 }
 
 
+
+const { Sider, Content} = Layout;
+
 const App = () => {
   const [data, setData] = useState();
-  const [isLoading, setIsLoading] = useState(false);
-  const [err, setErr] = useState('');
   const svgRef = useRef();
+  const Total= useRef();
 
 
   const SethandleClick= async () => {
@@ -62,9 +286,17 @@ const App = () => {
       console.log(res.data.n)
         //divide data into variables
         const DATA = res.data.XYData;
-        console.log(DATA);
+        //console.log(DATA);
         const color_list=res.data.color_list;
-        console.log(color_list);
+        const Nbatch=res.data.Nbatch;
+        console.log("Nbatch : ",Nbatch)
+        const Threshold=res.data.Threshold;
+        console.log("Threshold : ",Threshold)
+        const BatchSize=res.data.BatchSize;
+        console.log("BatchSize :",BatchSize);
+        const last_index = res.data.last_index;
+        console.log("Last index :", last_index);
+
 
         out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         outlier = DATA.filter((_, ind) => out_indices.includes(ind));
@@ -73,7 +305,7 @@ const App = () => {
 
         console.log("Understanding DATA");
         console.log(out_indices);
-        console.log(outlier);
+        console.log(outlier); 
         console.log(outlier[0])
         console.log(inlier);
         console.log(DATA);
@@ -232,52 +464,13 @@ const App = () => {
       console.error('DATA ERROR:', e);
     }
   };
-  const PosthandleClick = async () => {
-    var z = val.length;
-    var miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
-    console.log("X --------- X ---------- Y -------------- Y")
-    for(var i=0;i<z;i++)
-    {
-      for(var j=0;j<outlier.length;j++)
-      {
-        //console.log(val[i][0], outlier[j][0],Math.abs(val[i][0]-outlier[j][0]),"---", val[i][1], outlier[j][1],Math.abs(val[i][1]-outlier[j][1]));
-        if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
-        {
-          console.log("Yessss");
-          var x = outlier[j][0];
-          var y = outlier[j][1];
-          miscal.push([x,y,0,out_indices[j]]);
-        }
-      }
-      for(var j=0;j<inlier.length;j++)
-      {
-        if(Math.abs(val[i][0]-inlier[j][0]) < 0.0001 && Math.abs(val[i][1]-inlier[j][1]) < 0.0001)
-        {
-          var x = inlier[j][0];
-          var y = inlier[j][1];
-          miscal.push([x,y,1,in_indices[j]]);
-        }
-      }
-    }
-    console.log("MISCAL");
-    console.log(miscal);
-    const newdata={XYData:qs.stringify(miscal),color_list:'[1,0]',n:'100'};
-    let data = qs.stringify(newdata)
-    console.log("data!!:",qs.parse(data))
-    axios.post(`http://localhost:5000/BackendData`,data,
-    {
-        headers:{
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-    })
-    
-  };
   const outl = async() => {
     myFunction2(outlier,out_indices);
   }
+
   return (
     
-    <div className='App' style={{
+    <div className='App' style={{ 
         display:'block', 
         width:'100%',
         }}>
@@ -288,39 +481,36 @@ const App = () => {
         width:'20%', 
         float: 'left',
         display: 'inline-block',
-        height:'650px',
+        height:'690px',
         border:'1px solid black',
       }}>
 
-      {err && <h2>{err}</h2>}
-      <br></br>
-        <div style={{
-          height:'30px',
-        display: 'inline-block',
-      }}>
-
-      <button onClick={SethandleClick}>Get Frame</button>
-        </div>
-        <br></br>
-        <div style={{
-          height:'30px',
-        display: 'inline-block',
-      }}>
-      <button onClick={PosthandleClick}>Send Data Back</button>
-      </div>
-
       <br></br>
 
-      <div style={{
-        height:'30px',
-        display: 'inline-block',
-      }}>
-      <button onClick={outl}>Outliers</button>
-      </div>
-      <br></br>
-      <br></br>
+      <Layout style={{ height:  "70%", backgroundColor:'white',borderColor: "black" }}>
+        <Sider width={ "100%"} style={{backgroundColor:'LavenderBlush'}}>  
+          <p style={{fontWeight:'bold',fontSize: "15px",color: "grey",marginLeft: 30,marginRight: 30}}>Outlier Detection and Monitoring for Streaming data</p>
+              <Content style={{ height:  "100%"}}>
+              <Divider />
+              
+                <SliderOk/>
+                <Button size="small" shape="round" style={{ width:"180px",fontSize: "10px",color: "MediumPurple", marginLeft: 30,  marginTop: 5 ,background: "white", borderColor: "MediumPurple" }} onClick={SethandleClick}>Getting data from Backend</Button>
+                {/* <Progress style={{width:"180px",fontSize: "8px",color: "grey",marginLeft: 30,marginRight: 30}}
+                  
+                  percent={20}
+                  status="active"
+                  strokeColor={{
+                    from: "pink",
+                    to: "MediumPurple",
+                  }}
+                />
+                <table id="Totaldemo" style={{fontSize: "12px",color: "grey",marginLeft: 30}}>Progress : </table>     
+                 */}
+                     
+              </Content>
+        </Sider>
+      </Layout>
 
-        <a>Testing</a>
       </div>
 
 
@@ -328,7 +518,7 @@ const App = () => {
         width:'60%',
         float: 'left',
         display: 'inline-block',
-        height:'650px',
+        height:'690px',
         border:'1px solid black',
       }}>
         <svg ref={svgRef}></svg>
@@ -341,9 +531,25 @@ const App = () => {
         width:'19%',
         float: 'left',
         display: 'inline-block',
-        height: '650px',
+        height: '690px',
         border:'1px solid black',
       }}>
+
+      <div style={{
+          height:'30px',
+        display: 'inline-block',
+      }}>
+
+      <button onClick={SethandleClick}>Get Frame</button>
+      </div>
+
+        <br></br>
+      <div style={{
+        height:'30px',
+        display: 'inline-block',
+      }}>
+      <button onClick={outl}>Outliers</button>
+      </div>
         <p>Outliers</p>
             <table id="outlier">
 
