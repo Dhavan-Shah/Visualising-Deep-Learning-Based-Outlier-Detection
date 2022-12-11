@@ -519,6 +519,9 @@ const App = () => {
       .on('mouseout', function(){
         d3.select(this).attr('stroke', null);
       }) 
+
+    
+    
     //MAIN PLOT END
   //Slider PLOT START
   const svg2 = d3.select(svgRef2.current).attr("width", w).attr("height", h);
@@ -611,7 +614,11 @@ const App = () => {
 
   };
   
-  
+  const outl = () => {
+    console.log("new button :data.out_indices",data.out_indices)
+    console.log("outlier :",outlier)
+    myFunction2(outlier,data.out_indices);
+  }
 
   return (
     <div style={{ margin: 10 ,width:"80%",height:"70%"}}>
@@ -626,9 +633,6 @@ const App = () => {
                 
                 <Button size="small" shape="round" style={{ width:"200px",fontSize: "13px",color: "white", marginLeft: 30,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={SethandleClick}>Updating on Plot</Button>
               
-                <Divider /> 
-                <p style={{fontSize: "14px",color: "DimGrey",marginLeft: 30}}>Outliers</p>
-                  <table id="outlier"></table>
                 <Divider/>
                 <p style={{fontSize: "14px",color: "DimGrey",marginLeft: 30}}>Incorrect Classification</p>
                     <table style ={{fontSize: "8px",marginLeft: 30}}id="demo"></table>        
@@ -654,7 +658,7 @@ const App = () => {
       </div>
         </Layout>  
       </Layout>
-                
+       
     </div>
   );
 };
