@@ -15,6 +15,7 @@ let out_indicesList = [];
 let outlier = [];
 let in_indicesList = [];
 let inlier=[];
+let history=[];
 
 let n_Post=-1
 let sliderindexList=[]
@@ -143,7 +144,7 @@ class SliderOk extends React.Component {
     console.log("MISCAL:",miscal);
     const newdata={FullData:'[[]]',XYData:qs.stringify(miscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
     let data = qs.stringify(newdata)
-    console.log("data!!:",qs.parse(data))
+    //console.log("data!!:",qs.parse(data))
     axios.post(`http://localhost:5000/BackendData`,data,
     {
         headers:{
@@ -284,11 +285,17 @@ const App = () => {
   const [indeterminate, setIndeterminate] = useState(true);
   const [checkAll, setCheckAll] = useState(false);
   const [data, setData] = useState({FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
+  const [historydata, sethistoryData] = useState({FullData:""})
   
   const svgRef = useRef();
   const [width, setWidth] = useState(0);
-  const [sliderInd, setsliderInd] = useState(5);
+  const [width1, setWidth1] = useState(0);
+  const [sliderInd, setsliderInd] = useState(4);
+  const [sliderText, setsliderText] = useState("");
+  const [sliderInd1, setsliderInd1] = useState(4);
+  const [sliderText1, setsliderText1] = useState("Default");
   const svgRef2 = useRef();
+  const svgRef3 = useRef();
   const [sliderdata, slidersetData] = useState({sliderFullData:""})
   //const timeoutRef = useRef(null);
 
@@ -367,6 +374,7 @@ const App = () => {
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
         let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
+
       
       setData(prevState => ({
         ...prevState,
@@ -440,7 +448,7 @@ const App = () => {
     .range([0,16])
 
   //storing values in array
-  console.log("val :",val);
+  //console.log("val :",val);
 
   const Dataval = svg
         .selectAll('circle')
@@ -450,9 +458,9 @@ const App = () => {
 
       Dataval
       .on('mouseover', function(){
-        const data = data.DATA
+        const data = data
         d3.select(this).attr('stroke', '#333').attr('stroke-width', 2).attr(data);
-
+ 
       })
       .on('click', function(){
         d3.select(this).attr('stroke', '#000').attr('stroke-width', 4);
@@ -562,6 +570,8 @@ const App = () => {
     .then(res => {
         //divide data into variables
         const FullDATA = res.data.FullData;
+        console.log("큰사이즈 데이터 :",FullDATA.length)
+        history.push(FullDATA)
         const DATA = res.data.XYData;
         const last_index = res.data.last_index;
         console.log("Last index :", last_index);
@@ -571,10 +581,13 @@ const App = () => {
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
         let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
-        outlier=Outlier;
+        outlier=Outlier; 
         inlier=Inlier;
         out_indicesList=out_indices;
         in_indicesList=in_indices;
+
+
+
       setData(prevState => ({
         ...prevState,
         FullData: FullDATA,
@@ -596,30 +609,108 @@ const App = () => {
         //divide data into variables
         const sliderFullDATA = res.data.FullData;
         const last_index = res.data.last_index;
+        const Nbatch=Number(res.data.Nbatch);
         console.log("sliderFullDATA SIZE :",sliderFullDATA.length)  
         console.log("clicks:",clicks)
+        console.log("Nbatch :",Nbatch)
        
         sliderindexList=last_index[0].slice(1)
+        sliderindexList.push(sliderFullDATA.length)
       console.log("sliderindexList :",sliderindexList)
       console.log("event.target.value :",event.target.value)
-      console.log("sliderindexList[event.target.value-1] :",sliderindexList[event.target.value-1])
+     
+      let startTrain=0;
+      setsliderText(`${clicks} training batch < ${Nbatch+1} Frames (${Nbatch-clicks+1} batch needed more)`)
       setsliderInd(clicks)
-      
-      slidersetData(prevState => ({
-        ...prevState,
-        sliderFullData: sliderFullDATA.slice(0,sliderindexList[event.target.value-1]),
-      
-     }))
-    })
-
+      if (Number(event.target.value)===0){
+        slidersetData(prevState => ({
+          ...prevState,
+          sliderFullData: [[]]
+       }))}
+      else{
+        if (clicks>Nbatch){   
+          startTrain=sliderindexList[sliderindexList.length-Nbatch-1];
+          console.log("startTrain:",startTrain)
+          setsliderInd(Nbatch+1)
+          setsliderText("")
+          console.log("event.target.value :",event.target.value)
+          console.log("sliderindexList.length-Nbatch-1 :",sliderindexList.length-Nbatch-1)
+          console.log("sliderindexList.length-Nbatch-1+event.target.value :",sliderindexList.length-Nbatch-1+Number(event.target.value))
+          console.log("sliderindexList[sliderindexList.length - 1] :",sliderindexList[sliderindexList.length - 1])
+          
+        }
+          slidersetData(prevState => ({
+          ...prevState,
+          sliderFullData: sliderFullDATA.slice(startTrain,sliderindexList[sliderindexList.length-Nbatch-1+Number(event.target.value)]),
+        
+      }))
+  }})
+  
   };
+
+  const changeWidth1 = (event) => {
+    setWidth1(event.target.value);
+    console.log("히스토리 : ",event.target.value)
+    console.log("click :",clicks)
+    console.log("history :",history)
+    console.log("history[event.target.value-1]",history[event.target.value-1]);
+    let FullData=[[]];
+    if (Number(event.target.value)!=0){
+      FullData= history[event.target.value-1]
+      setsliderText1(event.target.value);
+    }
+    if (Number(event.target.value)==0){
+      console.log("디폴트")
+      FullData= [[]]
+      setsliderText1("Default");
+    }
+     console.log("현재 히스토리사이즈:",FullData)
+     console.log("sliderText1 :",sliderText1)
+     console.log("sliderText1 -1 :",sliderText1-1)
+    //sethistoryData(history[event.target.value-1])
+    setsliderInd1(clicks+1);
+    sethistoryData(prevState => ({
+      ...prevState,
+      FullData: FullData,
+      
+   }))
+  };
+
+  //History Slider PLOT START
+  const svg3 = d3.select(svgRef3.current).attr("width", w).attr("height", h);
+ 
+  //console.log("sliderdata.sliderFullData :",sliderdata.sliderFullData)
+  svg3.selectAll('circle')
+  .data(historydata.FullData)
+  .enter()
+    .append('circle')
+    .attr('cx',d=>xScale(d[0]))
+    .attr('cy',d=>yScale(d[1]))
+    .attr('r',2)
+    .attr('fill',d=>C(d[2])) 
+    .attr('opacity',"0.3");
+  
+  //exit
+  svg3.selectAll('circle')
+  .data(historydata.FullData).exit().remove();
+  
+  //update
+  svg3.selectAll('circle')
+  .data(historydata.FullData)
+  .transition()
+  .attr("fill",d=>C(d[2]))
+  .attr('cx',d=>xScale(d[0]))
+  .attr('cy',d=>yScale(d[1]))
+  .attr('r',2)
+  .attr('opacity',"0.3");
+  
   
   const outl = () => {
     console.log("new button :data.out_indices",data.out_indices)
     console.log("outlier :",outlier)
     myFunction2(outlier,data.out_indices);
   }
-
+  
   return (
     <div style={{ margin: 10 ,width:"80%",height:"70%"}}>
   
@@ -629,7 +720,7 @@ const App = () => {
               <Content style={{ height:  "100%"}}>
               <Divider />
                 
-                <SliderOk/>
+                <SliderOk/> 
                 
                 <Button size="small" shape="round" style={{ width:"200px",fontSize: "13px",color: "white", marginLeft: 30,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={SethandleClick}>Updating on Plot</Button>
               
@@ -650,11 +741,19 @@ const App = () => {
           <svg ref={svgRef} />
         </Layout>
         <Divider />
-        <h4>Process : {width} out of {sliderInd} batches</h4>
+        <h4>Test Process with {sliderInd-1} Frames: {width} out of {sliderInd} batches</h4>
+        <h4>{sliderText} </h4>
       <div className="slidecontainer">
       <input type='range'  className="slider" id="myRange" onChange={changeWidth}
         min={0} max={sliderInd} step={1} value={width} ></input>
         <svg ref={svgRef2} />
+      </div>
+
+      <h4>History : {sliderText1} plot</h4>
+      <div className="slidecontainer">
+      <input type='range'  className="slider" id="myRange1" onChange={changeWidth1}
+        min={0} max={sliderInd1} step={1} value={width1} ></input>
+        <svg ref={svgRef3} />
       </div>
         </Layout>  
       </Layout>
@@ -663,4 +762,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default App; 
