@@ -29,7 +29,7 @@ class SliderOk extends React.Component {
     
     this.state = {
       value1: 3,
-      value2: 0.3,
+      value2: 0.5,
       value3:100 ,
       selectValue:'HR_diagram.csv',
       CategoryType:'Binary Feature'
@@ -292,6 +292,7 @@ const App = () => {
   const [width1, setWidth1] = useState(0);
   const [sliderInd, setsliderInd] = useState(4);
   const [sliderText, setsliderText] = useState("");
+  const [sliderText2, setsliderText2] = useState("3 Frames: 0 out of 3 ");
   const [sliderInd1, setsliderInd1] = useState(4);
   const [sliderText1, setsliderText1] = useState("Default");
   const svgRef2 = useRef();
@@ -420,7 +421,7 @@ const App = () => {
     .attr('cy',d=>yScale(d[1]))
     .attr('r',2)
     .attr('fill',d=>C(d[2])) 
-    .attr('opacity',"0.3");
+    .attr('opacity',"0.5");
   
   //exit
   svg.selectAll('circle')
@@ -434,7 +435,7 @@ const App = () => {
   .attr('cx',d=>xScale(d[0]))
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
-  .attr('opacity',"0.3");
+  .attr('opacity',"0.5");
   
  
   //x ScaleBack
@@ -543,7 +544,7 @@ const App = () => {
     .attr('cy',d=>yScale(d[1]))
     .attr('r',2)
     .attr('fill',d=>C(d[2])) 
-    .attr('opacity',"0.3");
+    .attr('opacity',"0.5");
   
   //exit
   svg2.selectAll('circle')
@@ -557,7 +558,7 @@ const App = () => {
   .attr('cx',d=>xScale(d[0]))
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
-  .attr('opacity',"0.3");
+  .attr('opacity',"0.5");
   
 
 
@@ -620,24 +621,30 @@ const App = () => {
       console.log("event.target.value :",event.target.value)
      
       let startTrain=0;
-      setsliderText(`${clicks} training batch < ${Nbatch+1} Frames (${Nbatch-clicks+1} batch needed more)`)
+      setsliderText(`${clicks} testing batch < ${Nbatch} Frames (${Nbatch-clicks} batch needed more)`)
       setsliderInd(clicks)
+      setsliderText2(`${clicks} Frames: ${event.target.value} out of ${clicks} `)
       if (Number(event.target.value)===0){
         setsliderText("")
+        setsliderText2(`${Nbatch} Frames: `)
         slidersetData(prevState => ({
           ...prevState,
           sliderFullData: [[]]
        }))}
       else{
-        if (clicks>Nbatch){   
+        if (clicks>=Nbatch){   
           startTrain=sliderindexList[sliderindexList.length-Nbatch-1];
           console.log("startTrain:",startTrain)
           setsliderInd(Nbatch+1)
           setsliderText("")
+          setsliderText2(`${Nbatch} Frames: ${event.target.value-1} out of ${Nbatch} batches`)
           console.log("event.target.value :",event.target.value)
           console.log("sliderindexList.length-Nbatch-1 :",sliderindexList.length-Nbatch-1)
           console.log("sliderindexList.length-Nbatch-1+event.target.value :",sliderindexList.length-Nbatch-1+Number(event.target.value))
           console.log("sliderindexList[sliderindexList.length - 1] :",sliderindexList[sliderindexList.length - 1])
+          if (Number(event.target.value)===1){
+            setsliderText("Default")
+          }
           
         }
           slidersetData(prevState => ({
@@ -689,7 +696,7 @@ const App = () => {
     .attr('cy',d=>yScale(d[1]))
     .attr('r',2)
     .attr('fill',d=>C(d[2])) 
-    .attr('opacity',"0.3");
+    .attr('opacity',"0.5");
   
   //exit
   svg3.selectAll('circle')
@@ -703,7 +710,7 @@ const App = () => {
   .attr('cx',d=>xScale(d[0]))
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
-  .attr('opacity',"0.3");
+  .attr('opacity',"0.5");
   
   
   const outl = () => {
@@ -716,7 +723,7 @@ const App = () => {
     <div style={{ margin: 10 ,width:"80%",height:"70%"}}>
   
       <Layout style={{ height:  "70%", backgroundColor:'white',borderColor: "black" }}>
-        <Sider width={ "35%"} style={{backgroundColor:'OldLace'}}>  
+        <Sider width={ "35%"} style={{backgroundColor:'OldLace',marginLeft: 40,marginRight: 50}}>  
           <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 30,marginRight: 30}}>Outlier Detection and Monitoring<br></br> for Streaming data</p>
               <Content style={{ height:  "100%"}}>
               <Divider />
@@ -742,7 +749,7 @@ const App = () => {
           <svg ref={svgRef} />
         </Layout>
         <Divider />
-        <h4>Test Process with {sliderInd-1} Frames: {width} out of {sliderInd} batches</h4>
+        <h4>Process of Test Data with {sliderText2}</h4>
         <h4>{sliderText} </h4>
       <div className="slidecontainer">
       <input type='range'  className="slider" id="myRange" onChange={changeWidth}
