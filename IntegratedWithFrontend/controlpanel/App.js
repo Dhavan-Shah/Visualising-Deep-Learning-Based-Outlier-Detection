@@ -623,6 +623,7 @@ const App = () => {
       setsliderText(`${clicks} training batch < ${Nbatch+1} Frames (${Nbatch-clicks+1} batch needed more)`)
       setsliderInd(clicks)
       if (Number(event.target.value)===0){
+        setsliderText("")
         slidersetData(prevState => ({
           ...prevState,
           sliderFullData: [[]]
