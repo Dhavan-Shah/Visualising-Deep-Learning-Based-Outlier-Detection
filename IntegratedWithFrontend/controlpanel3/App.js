@@ -2,7 +2,8 @@ import React,{useRef, createRef,useState,useEffect} from 'react';
 import Slider, { createSliderWithTooltip } from "rc-slider";
 import "rc-slider/assets/index.css";
 import axios from 'axios';
-import { Select,Button ,Layout,Divider,Checkbox} from 'antd';
+import { Select,Button ,Layout,Divider,Checkbox, Drawer,Spin} from 'antd';
+
 import * as d3 from 'd3';
 
 import "./App.css"
@@ -27,10 +28,14 @@ let outlier2 = [];
 let in_indicesList2 = [];
 let inlier2=[];
 
+let AddingPointsList=[];
+let DeletingPointsList=[];
+let IsDeleting=false;
+let IsAdding=false;
 
 let history=[];
 
-let n_Post=-1
+let n_Post=-1 
 let sliderindexList=[]
 var last_index = [];
 let clicks = 0
@@ -101,7 +106,41 @@ class SliderOk extends React.Component {
   handleClick()  {
     n_Post+=1
     let miscal;
-    let miscal2
+    let miscal2;
+    let miscal3;
+//Deleting points to (0,0)
+console.log(
+"IsDeleting :",IsDeleting
+)
+if (IsDeleting){
+
+  miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+
+  for(var i=0;i<DeletingPointsList.length;i++)  
+  {
+    //outlier->inlier
+    for(var j=0;j<outlier.length;j++)
+    {
+        if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
+      {
+        miscal3.push([0,0,0,out_indicesList[j]]);
+      }
+    }
+    //inlier->outlier
+    for(var j=0;j<inlier.length;j++)
+    {
+
+      if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
+      { 
+        miscal3.push([0,0,1,in_indicesList[j]]);
+      }
+    }
+    console.log("miscal3 :",miscal3) 
+  } 
+}
+
+
+
 //Area selction post
     if (IsAreaBrush){
     var z2 =val2[0].length;
@@ -382,8 +421,8 @@ const App = () => {
   const svgRef2 = useRef();
   const svgRef3 = useRef();
   const [sliderdata, slidersetData] = useState({sliderFullData:""})
-  //const timeoutRef = useRef(null);
 
+ 
   const onSingleChange = (list) => {
     setCheckedList(list);
     setIndeterminate(!!list.length && list.length < plainOptions.length);
@@ -492,9 +531,13 @@ const App = () => {
   //MAIN PLOT START
   let svg = d3.select(svgRef.current).attr("width", w).attr("height", h)
 
-  var C = d3.scaleOrdinal()
-  .domain([0,1])
-  .range(["green","red"])
+  
+  var C=d3.scaleOrdinal()
+  .domain(["0", "1", "2"])
+  .range([ "green","red","purple"])
+  
+
+
   //enter
   svg.selectAll('circle')
   .data(data.FullData)
@@ -503,8 +546,8 @@ const App = () => {
     .attr('cx',d=>xScale(d[0]))
     .attr('cy',d=>yScale(d[1]))
     .attr('r',2)
-    .attr('fill',d=>C(d[2])) 
-    .attr('opacity',"0.5");
+    .attr('fill',d=>C(d[2].toString())) 
+    .attr('opacity',"0.65");
 
   //exit
   svg.selectAll('circle')
@@ -514,11 +557,11 @@ const App = () => {
   svg.selectAll('circle')
   .data(data.FullData)
   .transition()
-  .attr("fill",d=>C(d[2]))
+  .attr("fill",d=>C(d[2].toString()))
   .attr('cx',d=>xScale(d[0]))
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
-  .attr('opacity',"0.5");
+  .attr('opacity',"0.65");
 
 
   //x ScaleBack
@@ -538,7 +581,7 @@ const App = () => {
         .selectAll('circle')
         .data(data.DATA)
         .join('circle')
-            .attr('opacity', 0.75);
+            .attr('opacity', 0.65);
 
       Dataval
       .on('mouseover', function(){
@@ -651,8 +694,6 @@ function brushing(e) {
 
 
 function isInBrushExtent(d) {
-
-  //console.log("이스인브러쉬익스텐드",BrushData)
 	return brushExtent &&
 		d[0] >= xSB(brushExtent[0][0]) &&
 		d[0] <= xSB(brushExtent[1][0]) &&
@@ -715,8 +756,8 @@ function brushend(e) {
     .attr('cx',d=>xScale(d[0]))
     .attr('cy',d=>yScale(d[1]))
     .attr('r',2)
-    .attr('fill',d=>C(d[2])) 
-    .attr('opacity',"0.5");
+    .attr('fill',d=>C(d[2].toString())) 
+    .attr('opacity',"0.65");
 
   //exit
   svg2.selectAll('circle')
@@ -726,11 +767,11 @@ function brushend(e) {
   svg2.selectAll('circle')
   .data(sliderdata.sliderFullData)
   .transition()
-  .attr("fill",d=>C(d[2]))
+  .attr("fill",d=>C(d[2].toString()))
   .attr('cx',d=>xScale(d[0]))
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
-  .attr('opacity',"0.5");
+  .attr('opacity',"0.65");
 
 
 
@@ -867,8 +908,8 @@ function brushend(e) {
     .attr('cx',d=>xScale(d[0]))
     .attr('cy',d=>yScale(d[1]))
     .attr('r',2)
-    .attr('fill',d=>C(d[2])) 
-    .attr('opacity',"0.5");
+    .attr('fill',d=>C(d[2].toString())) 
+    .attr('opacity',"0.65");
 
   //exit
   svg3.selectAll('circle')
@@ -878,24 +919,107 @@ function brushend(e) {
   svg3.selectAll('circle')
   .data(historydata.FullData)
   .transition()
-  .attr("fill",d=>C(d[2]))
+  .attr("fill",d=>C(d[2].toString()))
   .attr('cx',d=>xScale(d[0]))
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
-  .attr('opacity',"0.5");
+  .attr('opacity',"0.65");
 
 
-  const outl = () => {
-    console.log("new button :data.out_indices",data.out_indices)
-    console.log("outlier :",outlier)
-    myFunction2(outlier,data.out_indices);
-  }
+
+
+//drawer start
+const [draweropen, setdrawerOpen] = useState(false);
+
+  const showDrawer = () => {
+    setdrawerOpen(true);
+  };
+
+  const onClose = () => {
+    setdrawerOpen(false);
+  };
+const [draweropen2, setdrawerOpen2] = useState(false);
+
+  const showDrawer2 = () => {
+    setdrawerOpen2(true);
+  };
+
+  const onClose2 = () => {
+    setdrawerOpen2(false);
+  };
+//drawer end
+
+
+
+//adding points start
+const AddingPoints=() => {
+  AddingPointsList=[] //to reset the list
+  IsAdding=true;
+  console.log(IsAdding)
+  const Dataval2 = svg
+        .selectAll('circle')
+        .data(data.DATA)
+        .join('circle')
+            .attr('opacity', 0.65);
+        svg
+        .on("click", function(event, d) {
+          
+          let points=d3.pointer(event)
+          
+          const xvalue = xSB(points[0]);
+          const yvalue = ySB(points[1]);
+          console.log("xvalue:",xvalue,"yvalue:",yvalue)
+          AddingPointsList.push([xvalue,yvalue])  
+          console.log("Adding BUTTON_AddingPointsList :",AddingPointsList)
+          let origin=data.FullData
+          
+          origin.push([xvalue,yvalue,2])
+          
+          setData(prevState => ({
+            ...prevState,
+            DATA: origin,
+          }))
+
+        });
+}
+//adding points end
+
+
+//deleting points start
+const DeletingPoints=() => {
+  IsDeleting=true;
+  const Dataval3 = svg
+        .selectAll('circle')
+        .data(data.DATA)
+        .join('circle')
+        .attr('opacity', 0.65);
+
+      Dataval3
+      .on('click', function(){
+        d3.select(this).attr('stroke', '#000').attr('stroke-width', 4);
+        const xval = this.cx["baseVal"]["value"];
+        const xvalue = xSB(xval);
+        const yval = this.cy["baseVal"]["value"];
+        const yvalue = ySB(yval);
+        DeletingPointsList.push([xvalue,yvalue])
+        
+        console.log("Deleting BUTTON_DeletingPointsList :",DeletingPointsList)
+        d3.select(this).attr('opacity', 0);
+      })
+}
+//deleting points end
+
+const outl = () => {
+  console.log("new button :data.out_indices",data.out_indices)
+  console.log("outlier :",outlier)
+  myFunction2(outlier,data.out_indices);
+}
 
   return (
-    <div style={{ margin: 10 ,width:"80%",height:"70%"}}>
+    <div style={{ margin: 10 ,width:"95%",height:"90%"}}>
 
       <Layout style={{ height:  "70%", backgroundColor:'white',borderColor: "black" }}>
-        <Sider width={ "35%"} style={{backgroundColor:'OldLace',marginLeft: 40,marginRight: 50}}>  
+        <Sider width={ "350"} style={{backgroundColor:'OldLace',marginLeft: 40,marginRight: 50}}>  
           <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 30,marginRight: 30}}>Outlier Detection and Monitoring<br></br> for Streaming data</p>
               <Content style={{ height:  "100%"}}>
               <Divider />
@@ -921,29 +1045,51 @@ function brushend(e) {
                     Check All</Checkbox>
               <CheckboxGroup options={plainOptions} value={checkedList} onChange={onSingleChange}/>        
             </div>
-
+            <Spin tip="Loading" size="small">
+              <div className="content" />
+            </Spin>
           </Content>
         <Layout style={{backgroundColor:'White'}}>
           <svg ref={svgRef} />
         </Layout>
         <Divider />
-        <h4>Process of Test Data with {sliderText2}</h4>
-        <h4>{sliderText} </h4>
-      <div className="slidecontainer">
-      <input type='range'  className="slider" id="myRange" onChange={changeWidth}
-        min={0} max={sliderInd} step={1} value={width} ></input>
-        <svg ref={svgRef2} />
-      </div>
+        </Layout>
+      <Sider width={"135"} height={"5"} style={{backgroundColor:'OldLace',marginLeft: 100,marginRight: 10}}>  
+       <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>Tool Tips</p>        
+       <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
+          Process 
+        </Button>
+        <Drawer title="Process of Test Data" size="large" placement="right" onClose={onClose} open={draweropen}>
+          <h4>{sliderText2}</h4>
+            <h4>{sliderText} </h4>
+          <div className="slidecontainer">
+          <input type='range'  className="slider" id="myRange" onChange={changeWidth}
+            min={0} max={sliderInd} step={1} value={width} ></input>
+            <svg ref={svgRef2} />
+          </div>
 
-      <h4>History : {sliderText1} plot</h4>
-      <div className="slidecontainer">
-      <input type='range'  className="slider" id="myRange1" onChange={changeWidth1}
-        min={0} max={sliderInd1} step={1} value={width1} ></input>
-        <svg ref={svgRef3} />
-      </div>
-        </Layout>  
+        </Drawer>
+
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer2}>
+        History
+        </Button>
+        <Drawer title="History" size="large" placement="right" onClose={onClose2} open={draweropen2}>
+            <h4> {sliderText1} plot</h4>
+            <div className="slidecontainer">
+            <input type='range'  className="slider" id="myRange1" onChange={changeWidth1}
+              min={0} max={sliderInd1} step={1} value={width1} ></input>
+              <svg ref={svgRef3} />
+            </div>
+        </Drawer>
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={AddingPoints}>
+        Adding Points
+        </Button> 
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={DeletingPoints}>
+        Deleting Points
+        </Button> 
+      </Sider>
       </Layout>
-
+      
     </div>
   );
 };
