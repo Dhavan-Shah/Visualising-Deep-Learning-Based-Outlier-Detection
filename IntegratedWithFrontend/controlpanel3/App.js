@@ -46,19 +46,17 @@ class SliderOk extends React.Component {
   constructor(props) {
     super(props);
 
-
     this.state = {
       value1: 3,
       value2: 0.5,
       value3:100 ,
       selectValue:'HR_diagram.csv',
-      CategoryType:'Binary Feature'
-
+      CategoryType:'Binary Feature',
+      timerBool:false  
     };
     this.handleClick = this.handleClick.bind(this);
     this.dropdownChange=this.dropdownChange.bind(this);
   }
-
 
   onSliderChange1 = value1 => {
     this.setState(
@@ -102,41 +100,54 @@ class SliderOk extends React.Component {
     this.setState({selectValue:e.target.value});
   }
 
-
+// POST BUTTON
   handleClick()  {
+  //Timer  Start
+    this.setState({timerBool:true}) 
+    let timerNumber=0;
+
+    let timer = d3.interval(()=>{
+      timerNumber++;
+      
+      if ( timerNumber > 3){
+        this.setState({timerBool:false})
+        timer.stop()}     
+    }, 1000);
+//Timer End
+
     n_Post+=1
     let miscal;
     let miscal2;
     let miscal3;
-//Deleting points to (0,0)
-console.log(
-"IsDeleting :",IsDeleting
-)
-if (IsDeleting){
+  //Deleting points to (0,0)
+  console.log(
+  "IsDeleting :",IsDeleting
+  )
+  if (IsDeleting){
 
-  miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+    miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
 
-  for(var i=0;i<DeletingPointsList.length;i++)  
-  {
-    //outlier->inlier
-    for(var j=0;j<outlier.length;j++)
+    for(var i=0;i<DeletingPointsList.length;i++)  
     {
-        if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
+      //outlier->inlier
+      for(var j=0;j<outlier.length;j++)
       {
-        miscal3.push([0,0,0,out_indicesList[j]]);
+          if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
+        {
+          miscal3.push([0,0,0,out_indicesList[j]]);
+        }
       }
-    }
-    //inlier->outlier
-    for(var j=0;j<inlier.length;j++)
-    {
+      //inlier->outlier
+      for(var j=0;j<inlier.length;j++)
+      {
 
-      if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
-      { 
-        miscal3.push([0,0,1,in_indicesList[j]]);
+        if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
+        { 
+          miscal3.push([0,0,1,in_indicesList[j]]);
+        }
       }
-    }
-    console.log("miscal3 :",miscal3) 
-  } 
+      console.log("miscal3 :",miscal3) 
+    } 
 }
 
 
@@ -259,6 +270,10 @@ else{
 
     return (
       <div style={{marginLeft: 30,marginRight: 30}} >
+        <Spin size="small" spinning={this.state.timerBool} > 
+              <div className="content" />
+        </Spin>
+        <br></br>
         <p style={{fontSize: "12px",color:"DimGrey"}}>Uploading Dataset : {this.state.CategoryType}</p>
         <Select value={this.state.selectValue} onChange={this.dropdownChange} >
           <option value="arxiv_articles_UMAP.csv">arxiv_articles_UMAP.csv</option>
@@ -328,6 +343,8 @@ else{
         <Button size="small" onClick={this.handleClick} shape="round" style={{width:"200px",fontSize: "13px", color: "white",background: "black", borderColor: "black"}}>
         Updating data on Backend
         </Button>
+
+        
       </div>
     );
   } 
@@ -409,7 +426,7 @@ const App = () => {
   const [checkAll, setCheckAll] = useState(false);
   const [data, setData] = useState({FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
   const [historydata, sethistoryData] = useState({FullData:""})
-
+  const [LoadingSymbol, setLoadingSymbol]=useState(true);
   const svgRef = useRef();
   const [width, setWidth] = useState(0);
   const [width1, setWidth1] = useState(0);
@@ -424,6 +441,8 @@ const App = () => {
 
  
   const onSingleChange = (list) => {
+    
+
     setCheckedList(list);
     setIndeterminate(!!list.length && list.length < plainOptions.length);
     setCheckAll(list.length === plainOptions.length);
@@ -1009,11 +1028,13 @@ const DeletingPoints=() => {
 }
 //deleting points end
 
+
 const outl = () => {
   console.log("new button :data.out_indices",data.out_indices)
   console.log("outlier :",outlier)
   myFunction2(outlier,data.out_indices);
 }
+
 
   return (
     <div style={{ margin: 10 ,width:"95%",height:"90%"}}>
@@ -1032,8 +1053,7 @@ const outl = () => {
                 <p style={{fontSize: "14px",color: "DimGrey",marginLeft: 30}}>Incorrect Classification</p>
                     <table style ={{fontSize: "8px",marginLeft: 30}}id="demo"></table>   
                 <Divider/>
-                <Button size="small" shape="round" style={{ width:"200px",fontSize: "13px",color: "white", marginLeft: 30,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={AreaClick}>Area Selection</Button>
-
+                
                 <p style={{fontSize: "14px",color: "DimGrey",marginLeft: 30}}>Area Incorrect Classification</p>
                     <table style ={{fontSize: "8px",marginLeft: 30}}id="demo2"></table>        
               </Content>
@@ -1045,18 +1065,16 @@ const outl = () => {
                     Check All</Checkbox>
               <CheckboxGroup options={plainOptions} value={checkedList} onChange={onSingleChange}/>        
             </div>
-            <Spin tip="Loading" size="small">
-              <div className="content" />
-            </Spin>
+            
           </Content>
         <Layout style={{backgroundColor:'White'}}>
           <svg ref={svgRef} />
         </Layout>
         <Divider />
         </Layout>
-      <Sider width={"135"} height={"5"} style={{backgroundColor:'OldLace',marginLeft: 100,marginRight: 10}}>  
-       <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>Tool Tips</p>        
-       <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
+      <Sider width={"135"} height={"5"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
+       <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[  Tool Tips  ]</p>        
+       <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginRight: 10,marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
           Process 
         </Button>
         <Drawer title="Process of Test Data" size="large" placement="right" onClose={onClose} open={draweropen}>
@@ -1070,7 +1088,7 @@ const outl = () => {
 
         </Drawer>
 
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer2}>
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer2}>
         History
         </Button>
         <Drawer title="History" size="large" placement="right" onClose={onClose2} open={draweropen2}>
@@ -1081,10 +1099,13 @@ const outl = () => {
               <svg ref={svgRef3} />
             </div>
         </Drawer>
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={AddingPoints}>
+        
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "black", marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AreaClick}>Area Selection</Button>
+        
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "black", marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints}>
         Adding Points
         </Button> 
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={DeletingPoints}>
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "black", marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={DeletingPoints}>
         Deleting Points
         </Button> 
       </Sider>
