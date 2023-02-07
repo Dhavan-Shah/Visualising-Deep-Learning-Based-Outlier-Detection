@@ -2,18 +2,19 @@ import React,{useRef, createRef,useState,useEffect} from 'react';
 import Slider, { createSliderWithTooltip } from "rc-slider";
 import "rc-slider/assets/index.css";
 import axios from 'axios';
-import { Select,Button ,Layout,Divider,Checkbox, Drawer,Spin} from 'antd';
-
+import { Select,Button ,Layout,Divider,Checkbox,Drawer,Spin} from 'antd';
 import * as d3 from 'd3';
+//import d3ConcentricCircles from 'd3-concentric-circles';
 
 import "./App.css"
 //https://stackoverflow.com/questions/63905902/how-to-get-value-of-dropdown-component-in-ant-design-antd-react-js
 var qs = require('qs');
 
 var rowno=0;
-var rowno2=0;
+var rowno2 = 0;
 var val = [];
 var val2=[];
+
 let BrushData=[];
 let IsAreaBrush=false;
 
@@ -22,12 +23,15 @@ let outlier = [];
 let in_indicesList = [];
 let inlier=[];
 
-
 let out_indicesList2 = [];
 let outlier2 = [];
 let in_indicesList2 = [];
 let inlier2=[];
 
+let AddingPointsList=[];
+let DeletingPointsList=[];
+let IsDeleting=false;
+let IsAdding=false;
 
 let history=[];
 
@@ -36,26 +40,25 @@ let sliderindexList=[]
 var last_index = [];
 let clicks = 0
 
-
-
 class SliderOk extends React.Component {
   constructor(props) {
     super(props);
 
-
+    
     this.state = {
       value1: 3,
       value2: 0.5,
       value3:100 ,
       selectValue:'HR_diagram.csv',
-      CategoryType:'Binary Feature'
-
+      CategoryType:'Binary Feature',
+      timerBool:false
+      
     };
     this.handleClick = this.handleClick.bind(this);
     this.dropdownChange=this.dropdownChange.bind(this);
   }
-
-
+  
+  
   onSliderChange1 = value1 => {
     this.setState(
       {
@@ -63,10 +66,10 @@ class SliderOk extends React.Component {
       },
       () => {
         var SliderValue=this.state.value1     
-        console.log("Slider value: ",SliderValue);
+        //console.log("Slider value: ",SliderValue);
       }     
     );
-
+    
   };
 
   onSliderChange2 = value2 => {
@@ -76,10 +79,10 @@ class SliderOk extends React.Component {
       },
       () => {
         var SliderValue=this.state.value2   
-        console.log("Slider value: ",SliderValue);
+        //console.log("Slider value: ",SliderValue);
       }     
     );
-
+    
   };
   onSliderChange3 = value3 => {
     this.setState(
@@ -88,90 +91,142 @@ class SliderOk extends React.Component {
       },
       () => {
         var SliderValue=this.state.value3   
-        console.log("Slider value: ",SliderValue);
+        //console.log("Slider value: ",SliderValue);
       }     
     );
-
+    
   };
-
+  
   dropdownChange=e=>{
     this.setState({selectValue:e.target.value});
   }
-
+  
 
   handleClick()  {
+    //reset all functions
+    IsDeleting=false
+    IsAdding=false
+
+
+    //Timer  Start
+    this.setState({timerBool:true}) 
+    let timerNumber=0;
+
+    let timer = d3.interval(()=>{
+      timerNumber++;
+      
+      if ( timerNumber > 3){
+        this.setState({timerBool:false})
+        timer.stop()}     
+    }, 1000);
+    //Timer End
+
     n_Post+=1
-    let miscal;
-    let miscal2
-//Area selction post
+
+    //let miscal;
+    let miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
+    let miscal2 = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
+    let miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]];;
+    //Deleting points to (0,0)
+   // console.log( "IsDeleting :",IsDeleting)
+    if (IsDeleting){
+
+      miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+
+      for(var i=0;i<DeletingPointsList.length;i++)  
+      {
+        //outlier->inlier
+        for(var j=0;j<outlier.length;j++)
+        {
+            if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
+          {
+            miscal3.push([0,0,0,out_indicesList[j]]);
+          }
+        }
+        //inlier->outlier
+        for(var j=0;j<inlier.length;j++)
+        {
+
+          if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
+          { 
+            miscal3.push([0,0,1,in_indicesList[j]]);
+          }
+        }
+    //    console.log("miscal3 :",miscal3) 
+      } 
+  }
+
+
+    //Area selction post
     if (IsAreaBrush){
-    var z2 =val2[0].length;
+      var z2 =val2[0].length;
+      
+      miscal2 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+      
+      for(var i=0;i<z2;i++) 
+      {
+        //outlier->inlier
+        for(var j=0;j<outlier.length;j++)
+        {
+        
+          if(Math.abs(val2[0][i][0]-outlier[j][0]) < 0.0001 && Math.abs(val2[0][i][1]-outlier[j][1]) < 0.0001)
+          {
+            console.log("outlier->inlier");
+            var x = outlier[j][0];
+            var y = outlier[j][1];
+            miscal2.push([x,y,0,out_indicesList[j]]);
+          }
+        }
+        //inlier->outlier
+        for(var j=0;j<inlier.length;j++)
+        {
     
-    miscal2 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
-    
-    for(var i=0;i<z2;i++) 
-    {
-      //outlier->inlier
-      for(var j=0;j<outlier.length;j++)
-      {
-       
-         if(Math.abs(val2[0][i][0]-outlier[j][0]) < 0.0001 && Math.abs(val2[0][i][1]-outlier[j][1]) < 0.0001)
-        {
-          console.log("outlier->inlier");
-          var x = outlier[j][0];
-          var y = outlier[j][1];
-          miscal2.push([x,y,0,out_indicesList[j]]);
+          if(Math.abs(val2[0][i][0]-inlier[j][0]) < 0.0001 && Math.abs(val2[0][i][1]-inlier[j][1]) < 0.0001)
+          {
+            console.log("inlier->outlier");
+            var x = inlier[j][0];
+            var y = inlier[j][1];
+            miscal2.push([x,y,1,in_indicesList[j]]);
+          }
         }
-      }
-      //inlier->outlier
-      for(var j=0;j<inlier.length;j++)
-      {
-  
-        if(Math.abs(val2[0][i][0]-inlier[j][0]) < 0.0001 && Math.abs(val2[0][i][1]-inlier[j][1]) < 0.0001)
-        {
-          console.log("inlier->outlier");
-          var x = inlier[j][0];
-          var y = inlier[j][1];
-          miscal2.push([x,y,1,in_indicesList[j]]);
-        }
-      }
-      console.log("miscal2 :",miscal2) 
-    }
-  }
-//Area selction post END
-
-else{
- //point selection
-    var z = val.length;
-    console.log("val:",val)
-    miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
-    console.log("X --------- X ---------- Y -------------- Y")
-    for(var i=0;i<z;i++)
-    {
-      for(var j=0;j<outlier.length;j++)
-      {
-
-         if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
-        {
-          console.log("Yessss");
-          var x = outlier[j][0];
-          var y = outlier[j][1];
-          miscal.push([x,y,0,out_indicesList[j]]);
-        }
-      }
-      for(var j=0;j<inlier.length;j++)
-      {
-
-        if(Math.abs(val[i][0]-inlier[j][0]) < 0.0001 && Math.abs(val[i][1]-inlier[j][1]) < 0.0001)
-        {
-          var x = inlier[j][0];
-          var y = inlier[j][1];
-          miscal.push([x,y,1,in_indicesList[j]]);
-        }
+     //   console.log("miscal2 :",miscal2) 
       }
     }
-  }
-    console.log("TESTING INPUTS");
+    //Area selction post END
+
+    else
+    {
+      var z = val.length;
+    
+      //console.log("X --------- X ---------- Y -------------- Y")
+      for(var i=0;i<z;i++)
+      {
+        for(var j=0;j<outlier.length;j++)
+        {
+          
+          if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
+          {
+            console.log("Yessss");
+            var x = outlier[j][0];
+            var y = outlier[j][1];
+            miscal.push([x,y,0,out_indicesList[j]]);
+          }
+        }
+        for(var j=0;j<inlier.length;j++)
+        {
+    
+          if(Math.abs(val[i][0]-inlier[j][0]) < 0.0001 && Math.abs(val[i][1]-inlier[j][1]) < 0.0001)
+          {
+            var x = inlier[j][0];
+            var y = inlier[j][1];
+            miscal.push([x,y,1,in_indicesList[j]]);
+          }
+        }
+      //  console.log("miscal :",miscal) 
+      }
+    }
+
+    //console.log("TESTING INPUTS");
     clicks += 1;
     if(last_index.length == 0)
     { 
@@ -181,12 +236,11 @@ else{
     else
     {
       var temp = last_index.length;
-      console.log(temp, last_index[temp - 1]);
+     // console.log(temp, last_index[temp - 1]);
       last_index.push( Number(last_index[temp-1]) + Number(this.state.value3));
     }
-
     var Threshold = this.state.value2;
-    console.log(Threshold);
+   // console.log(Threshold);
 
     if(Threshold == "Comparitive Value")
     {
@@ -196,15 +250,19 @@ else{
     {
       Threshold = this.state.value2; 
     }
-    console.log(this.state.value1, Threshold, this.state.value3);
-    console.log(last_index);
+   // console.log(this.state.value1, Threshold, this.state.value3);
+   // console.log(last_index);
 
     let Totalmiscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
     if (IsAreaBrush){Totalmiscal=miscal2}
     else{Totalmiscal=miscal} 
-   // console.log("MISCAL:",miscal);
-   // const newdata={FullData:'[[]]',XYData:qs.stringify(miscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
-     
+
+
+  //  console.log(Totalmiscal);
+  //  console.log(miscal);
+  //  console.log(miscal2);
+  //  console.log("__________DATA_________");
+    //const newdata={FullData:'[[]]',XYData:qs.stringify(miscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
     const newdata={FullData:'[[]]',XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
 
     let data = qs.stringify(newdata)
@@ -216,11 +274,15 @@ else{
         }
     })  
   };
-
+  
   render() {
-
+   
     return (
       <div style={{marginLeft: 30,marginRight: 30}} >
+        <Spin size="small" spinning={this.state.timerBool} > 
+              <div className="content" />
+        </Spin>
+        <br></br>
         <p style={{fontSize: "12px",color:"DimGrey"}}>Uploading Dataset : {this.state.CategoryType}</p>
         <Select value={this.state.selectValue} onChange={this.dropdownChange} >
           <option value="arxiv_articles_UMAP.csv">arxiv_articles_UMAP.csv</option>
@@ -299,7 +361,7 @@ else{
 
 function myFunction(val) { 
   var table = document.getElementById("demo");
-
+  
     table.innerHTML = "";
     if(val.length>0)
     {
@@ -316,7 +378,6 @@ function myFunction(val) {
     console.log(rowno);
 
 }
-
 
 function AreamyFunction(val) { 
   var table = document.getElementById("demo2");
@@ -353,6 +414,9 @@ function myFunction2(val, index) {
   }
 }
 
+
+
+
 /* function TotalFunction(Total,NumberofData) {
   document.getElementById("Totaldemo").innerHTML = "Progress : "+(Total/NumberofData*100).toFixed(2);
   }
@@ -365,12 +429,17 @@ const plainOptions = ["Inlier","Outlier"];
 const defaultCheckedList = ["Inlier","Outlier"];
 
 const App = () => {
-
+  
   const [checkedList, setCheckedList] = useState(defaultCheckedList);
   const [indeterminate, setIndeterminate] = useState(true);
   const [checkAll, setCheckAll] = useState(false);
   const [data, setData] = useState({FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
   const [historydata, sethistoryData] = useState({FullData:""})
+  
+  const [incorrectNum, setincorrectNum] = useState(0);
+  const [deleteNum, setdeleteNum] = useState(0);
+  const [addNum, setaddNum] = useState(0);
+
 
   const svgRef = useRef();
   const [width, setWidth] = useState(0);
@@ -382,19 +451,20 @@ const App = () => {
   const [sliderText1, setsliderText1] = useState("Default");
   const svgRef2 = useRef();
   const svgRef3 = useRef();
+  const svgRef4 = useRef();
   const [sliderdata, slidersetData] = useState({sliderFullData:""})
+  //const timeoutRef = useRef(null); 
 
- 
   const onSingleChange = (list) => {
     setCheckedList(list);
     setIndeterminate(!!list.length && list.length < plainOptions.length);
     setCheckAll(list.length === plainOptions.length);
     if( list.includes("Outlier")&&list.includes("Inlier")) {
-
+      
       axios.get('http://localhost:5000/BackendData')
       .then(res => {
           //divide data into variables
-
+      
       const DATA = res.data.XYData;
       const color_list=res.data.color_list;
       let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
@@ -414,31 +484,31 @@ const App = () => {
     })
     }	
     else if( list.includes("Outlier")) {
-
+      
       let out_indices1 = data.FullData.map((c,i)=>c[2]===1?i:'').filter(String);
-      console.log( out_indices1)
+     // console.log( out_indices1)
       let outlier1 =data.FullData.filter((_, ind) => out_indices1.includes(ind));
-      console.log(outlier1)
-
+     // console.log(outlier1)
+      
       setData(prevState => ({
         ...prevState,
         FullData: outlier1,
       }))
     }	
     else if( list.includes("Inlier")) {
-
+     
       let in_indices1 = data.FullData.map((c,i)=>c[2]===0?i:'').filter(String);
-      console.log( in_indices1)
-
+     // console.log( in_indices1)
+      
       let inlier1 =data.FullData.filter((_, ind) => in_indices1.includes(ind));
-      console.log(inlier1)
+     // console.log(inlier1)
       setData(prevState => ({
         ...prevState,
         FullData: inlier1,
       }))
     }	
     else{
-
+     
     setData(prevState => ({
       ...prevState,
       FullData: [[]],
@@ -451,7 +521,7 @@ const App = () => {
     setCheckAll(e.target.checked);
 
     if (e.target.checked){
-
+      
       axios.get('http://localhost:5000/BackendData')
       .then(res => {
         const DATA = res.data.XYData;
@@ -461,7 +531,7 @@ const App = () => {
         let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
 
-
+      
       setData(prevState => ({
         ...prevState,
         FullData:  res.data.FullData,
@@ -479,7 +549,7 @@ const App = () => {
 
   const w=800;
   const h=450;
-
+      
   const xScale = d3.scaleLinear()
         .domain([0, 5])
         .range([0,w]);
@@ -489,14 +559,110 @@ const App = () => {
       .domain([0,16])
       .range([h,0])
 
-
+  
   //MAIN PLOT START
   let svg = d3.select(svgRef.current).attr("width", w).attr("height", h)
+  let svg4 = d3.select(svgRef4.current).attr("width", 800).attr("height",150);
 
+
+  function funcsvg(arr)
+  {
+    console.log("Entered funcsvg");
+    console.log(arr);
+    var gsvg = svg4.append('g');
+    var glin = svg4.append('g');
+    var lindat = [];
+    var dataLevel = [];
+    //y = 10, 140
+    //x = 120, 220
+    var x = 300;
+    var x_1 = [];
+    //var x_2 = [];
+    for(var i=0; i<11; i++) 
+    {
+      if(i<arr.length)
+      {
+        x_1.push((i*100)/(arr.length) + x);
+        if(arr[i][2] == 0)
+        {
+          dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
+          lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
+          console.log("Green Execution");
+        }
+        else
+        {
+          dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 140]);
+          lindat.push([(i*100)/(arr.length) + x, 140, "red"]);
+          console.log("Red Execution");
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+    var li = [];
+    for(var k=0; k<lindat.length-1;k++)
+    {
+      li.push([lindat[k][0], lindat[k][1], lindat[k+1][0], lindat[k+1][1], lindat[k+1][2]]);
+    }
+    
+    console.log(li);
+    console.log(dataLevel);
+    dataLevel.reverse();
+    console.log(dataLevel);
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", 100)
+      .attr("cy", 80)
+      .attr("r", function(d){return d[0];})
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    glin.selectAll('circle')
+      .data(x_1)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d})
+      .attr("x2",function(d){return d})
+      .attr("y1", 10)
+      .attr("y2", 140)
+      .style("stroke", "black")
+      .style("stroke-width", 5);
+
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d){return d[2];})
+      .attr("cy", function(d){return d[3];})
+      .attr("r", 2)
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    glin.selectAll('circle')
+      .data(li)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d[0];})
+      .attr("x2",function(d){return d[2];})
+      .attr("y1",function(d){return d[1];})
+      .attr("y2",function(d){return d[3];})
+      .style("stroke",function(d){return d[4];})
+      .style("stroke-width", 3);
+    
+  }
+ 
   var C = d3.scaleOrdinal()
   .domain([0,1])
-  .range(["green","red"])
+  .range(["green","red","yellow"])
+
   //enter
+  //console.log("data.FulData", data.FullData);
   svg.selectAll('circle')
   .data(data.FullData)
   .enter()
@@ -506,11 +672,11 @@ const App = () => {
     .attr('r',2)
     .attr('fill',d=>C(d[2])) 
     .attr('opacity',"0.5");
-
+  
   //exit
   svg.selectAll('circle')
   .data(data.FullData).exit().remove();
-
+  
   //update
   svg.selectAll('circle')
   .data(data.FullData)
@@ -520,8 +686,8 @@ const App = () => {
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
   .attr('opacity',"0.5");
-
-
+  
+ 
   //x ScaleBack
   const xSB = d3.scaleLinear()
   .domain([0,w])
@@ -533,38 +699,83 @@ const App = () => {
     .range([0,16])
 
   //storing values in array
-  console.log("val :",val);
-
+  //console.log("val :",val);
+ 
   const Dataval = svg
-        .selectAll('circle')
-        .data(data.DATA)
-        .join('circle')
-            .attr('opacity', 0.75);
-
+    .selectAll('circle')
+    .data(data.DATA)
+    .join('circle')
+        .attr('opacity', 0.75);
+  //DotClick
+  const DotClick=() => {
+    if (((incorrectNum+1)%2===1)&&(deleteNum%2===0)&&(addNum%2===0)){
+      setincorrectNum(incorrectNum+1)
+      console.log("싱글닷")
       Dataval
       .on('mouseover', function(){
         const data = data
         d3.select(this).attr('stroke', '#333').attr('stroke-width', 2).attr(data);
+        //console.log("DATA:", data);
 
+        console.log("-----------------HISTORY DATA---------------");
+       // console.log(history);
+        console.log("---------------------------------------------");
+        
+        d3.select(this);
+        const xval = this.cx["baseVal"]["value"];
+        const yval = this.cy["baseVal"]["value"];
+        const xvalue = xSB(xval);
+        const yvalue = ySB(yval);
+        var temp = Array(2);
+        temp = [xvalue,yvalue];
+        console.log(temp);
+        console.log(history);
+        var hisarr = [];
+        var ind = -100;
+        for(var i=0; i<history[history.length- 1].length; i++)
+        {
+          if(Math.abs(xvalue-history[history.length-1][i][0])< 0.0001 && Math.abs(yvalue - history[history.length-1][i][0]))
+          {
+            console.log("Match Found Hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+            ind = i;
+            break;
+          } 
+        }
+        for(var j=history.length-1; j>-1;j--)
+        {
+          if(history[j].length>= ind)
+          {
+            hisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
+          }
+          else
+          {
+            break;
+          }
+        }
+      //  console.log(hisarr);
+        hisarr.reverse();
+       // console.log(hisarr);
+        funcsvg(hisarr);
+ 
       })
       .on('click', function(){
         d3.select(this).attr('stroke', '#000').attr('stroke-width', 4);
         console.log("Enter::");
-        console.log(this);
+       // console.log(this);
         const xval = this.cx["baseVal"]["value"];
         const xvalue = xSB(xval);
         const yval = this.cy["baseVal"]["value"];
         const yvalue = ySB(yval);
         var temp = Array(2);
         temp = [xvalue,yvalue];
-        console.log(temp);
+      //  console.log(temp);
         val.push(temp);
-        console.log("val :",val);
-
-        console.log("xvalue:",xvalue);
-        console.log("yvalue : ",yvalue);
-        console.log(" xval, yval");
-        if (d3.select(this).attr('fill')=='yellow')
+      //  console.log("val :",val);
+     
+      //  console.log("xvalue:",xvalue);
+      //  console.log("yvalue : ",yvalue);
+      //  console.log(" xval, yval");
+        if (d3.select(this).attr('fill')=='purple')
         {
           console.log("HEREEEEEEEEE");
           for(var j=0;j<data.Outlier.length;j++)
@@ -574,11 +785,13 @@ const App = () => {
             {
               console.log("----------------HEREEEEEEEEE--------------");
               d3.select(this).attr('fill','red');
+              d3.select(this).attr('opacity', 0.5);
               break;
-            }
+            } 
             else
-            {
+            { 
               d3.select(this).attr('fill','green');
+              d3.select(this).attr('opacity', 0.5);
             }
           }
           console.log(val[val.length -1]);
@@ -602,7 +815,8 @@ const App = () => {
         }
         else
         {
-          d3.select(this).attr('fill','yellow');
+          d3.select(this).attr('fill','purple');
+          d3.select(this).attr('opacity', 1.0);
         }
       console.log(val);
       myFunction(val);
@@ -611,101 +825,114 @@ const App = () => {
       })
       .on('mouseout', function(){
         d3.select(this).attr('stroke', null);
-      })  
-
-// Add brushing
-
-const AreaClick=() => {
-  IsAreaBrush=true;
-// create brush 
-var brush = d3.brush();
-
-// set brush extend (0,0) is top left corner
-brush.extent([[0, 0], [ w, h]]);
-
-// attach events  
-brush  
-    .on("start brush", brushing)
-    .on("end", brushend);
-
-// call brush on selection  
-svg.append("g")
-    .call(brush);
-
-let brushExtent;
-// during brushing send coordinates to console
-function brushing(e) {
-  BrushData=[]
-  brushExtent =e.selection
-  let x0 =xSB(brushExtent[0][0]),
-      y0 = ySB(brushExtent[0][1]),
-      x1 = xSB(brushExtent[1][0]),
-      y1 = ySB(brushExtent[1][1])
-  //console.log("("+x0+","+y0+")-("+x1+","+y1+")");
-  BrushData.push([x0,y0],[x1,y1])
-
-  //console.log("filteredData: ",filteredData)
-
-  update()
-
-}
-
-
-function isInBrushExtent(d) {
-	return brushExtent &&
-		d[0] >= xSB(brushExtent[0][0]) &&
-		d[0] <= xSB(brushExtent[1][0]) &&
-		d[1] >= ySB( brushExtent[0][1]) &&
-		d[1] <= ySB(brushExtent[1][1]);
-}
-let OriginalData=data.FullData
-
-console.log("BrushData : ",BrushData)
-//console.log(Object.entries(OriginalData))
-
-//
-//const color_list = data.y_train;
-//const out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
-//const outlier = data.X_train.filter((_, ind) => out_indices.includes(ind));
-//
-
-function update() {
-
-	/* svg.selectAll('circle')
-  .data(filteredData) 
-  .transition()
-		.attr('cx', function(d) { return xScale(d[0]); })
-		.attr('cy', function(d) { return yScale(d[1]); })
-		.attr('r', 2)
-		.style('fill', 'black'); */
+        //var gsvg = svg4.append('g');
+        svg4.selectAll("*").remove();
+      }) 
+  
+    }
+  
+  else{
+    console.log("아닌애")
+    setincorrectNum(incorrectNum+1)
+    
+  
   }
-//.style('fill', function(d) {return isInBrushExtent(d) ? 'black' : null;})
-// on brush end, console log if no selection
-function brushend(e) {
-  const filteredInd=OriginalData.map((c,i)=>(c[0]>=BrushData[0][0]&&c[0]<=BrushData[1][0]&& c[1]<=BrushData[0][1]&&c[1]>=BrushData[1][1])?i:'').filter(String);
-  const filteredData = OriginalData.filter((_, ind) => filteredInd.includes(ind));
-  //const NotfilteredData = OriginalData.filter((_, ind) => !filteredInd.includes(ind));
- 
-  console.log('end');
-  console.log("씨filteredData",filteredData)
-  val2.push(filteredData)
-  AreamyFunction(filteredData)
+}
+  // Add brushing
 
-  if (!e.selection) {
-    console.log('There is no selection');
-  }   
-}  
+  const AreaClick=() => {
+    IsAreaBrush=true;
+  // create brush 
+  var brush = d3.brush();
+
+  // set brush extend (0,0) is top left corner
+  brush.extent([[0, 0], [ w, h]]);
+
+  // attach events  
+  brush  
+      .on("start brush", brushing)
+      .on("end", brushend);
+
+  // call brush on selection  
+  svg.append("g")
+      .call(brush);
+
+  let brushExtent;
+  // during brushing send coordinates to console
+  function brushing(e) {
+    BrushData=[]
+    brushExtent =e.selection
+    let x0 =xSB(brushExtent[0][0]),
+        y0 = ySB(brushExtent[0][1]),
+        x1 = xSB(brushExtent[1][0]),
+        y1 = ySB(brushExtent[1][1])
+    //console.log("("+x0+","+y0+")-("+x1+","+y1+")");
+    BrushData.push([x0,y0],[x1,y1])
+
+    //console.log("filteredData: ",filteredData)
+
+    update()
+
+  }
+
+
+  function isInBrushExtent(d) {
+    return brushExtent &&
+      d[0] >= xSB(brushExtent[0][0]) &&
+      d[0] <= xSB(brushExtent[1][0]) &&
+      d[1] >= ySB( brushExtent[0][1]) &&
+      d[1] <= ySB(brushExtent[1][1]);
+  }
+  let OriginalData=data.FullData
+
+ // console.log("BrushData : ",BrushData)
+  //console.log(Object.entries(OriginalData))
+
+  //
+  //const color_list = data.y_train;
+  //const out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
+  //const outlier = data.X_train.filter((_, ind) => out_indices.includes(ind));
+  //
+
+  function update() {
+
+    /* svg.selectAll('circle')
+    .data(filteredData) 
+    .transition()
+      .attr('cx', function(d) { return xScale(d[0]); })
+      .attr('cy', function(d) { return yScale(d[1]); })
+      .attr('r', 2)
+      .style('fill', 'black'); */
+    }
+  //.style('fill', function(d) {return isInBrushExtent(d) ? 'black' : null;})
+  // on brush end, console log if no selection
+  function brushend(e) {
+    const filteredInd=OriginalData.map((c,i)=>(c[0]>=BrushData[0][0]&&c[0]<=BrushData[1][0]&& c[1]<=BrushData[0][1]&&c[1]>=BrushData[1][1])?i:'').filter(String);
+    const filteredData = OriginalData.filter((_, ind) => filteredInd.includes(ind));
+    //const NotfilteredData = OriginalData.filter((_, ind) => !filteredInd.includes(ind));
+  
+    console.log('end');
+    console.log("씨filteredData",filteredData)
+    val2.push(filteredData)
+    AreamyFunction(filteredData)
+
+    if (!e.selection) {
+      console.log('There is no selection');
+    }   
+  }  
 
 }
+  //area selection end
+  
+  
+  //MAIN PLOT END
 
+  //var dataLevel = [[40,"red"],[30,"blue"],[10,"green"]]
+  //Concentric Circles
 
-//area selection end
-
-
-    //MAIN PLOT END
   //Slider PLOT START
   const svg2 = d3.select(svgRef2.current).attr("width", w).attr("height", h);
-
+ 
   //console.log("sliderdata.sliderFullData :",sliderdata.sliderFullData)
   svg2.selectAll('circle')
   .data(sliderdata.sliderFullData)
@@ -716,11 +943,11 @@ function brushend(e) {
     .attr('r',2)
     .attr('fill',d=>C(d[2])) 
     .attr('opacity',"0.5");
-
+  
   //exit
   svg2.selectAll('circle')
   .data(sliderdata.sliderFullData).exit().remove();
-
+  
   //update
   svg2.selectAll('circle')
   .data(sliderdata.sliderFullData)
@@ -730,10 +957,14 @@ function brushend(e) {
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
   .attr('opacity',"0.5");
-
+  
 
 
   const SethandleClick=() => {
+    //initializing deleting and adding points button
+    setdeleteNum(0)
+    setaddNum(0)
+    //
     val = [];
     myFunction(val)
     //If your outlier table does not work well, you can uncomment below and assign index you want
@@ -742,12 +973,12 @@ function brushend(e) {
     .then(res => {
         //divide data into variables
         const FullDATA = res.data.FullData;
-        
+        //console.log("큰사이즈 데이터 :",FullDATA.length)
         history.push(FullDATA)
         const DATA = res.data.XYData;
         const last_index = res.data.last_index;
-        console.log("Last index :", last_index);
-
+        //console.log("Last index :", last_index);
+       
         const color_list=res.data.color_list;
         let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
@@ -775,22 +1006,22 @@ function brushend(e) {
 
   const changeWidth = (event) => {
     setWidth(event.target.value);
-
+  
     axios.get('http://localhost:5000/BackendData')
     .then(res => {
         //divide data into variables
         const sliderFullDATA = res.data.FullData;
         const last_index = res.data.last_index;
         const Nbatch=Number(res.data.Nbatch);
-        console.log("sliderFullDATA SIZE :",sliderFullDATA.length)  
-        console.log("clicks:",clicks)
-        console.log("Nbatch :",Nbatch)
-
+        //console.log("sliderFullDATA SIZE :",sliderFullDATA.length)  
+        //console.log("clicks:",clicks)
+        //console.log("Nbatch :",Nbatch)
+       
         sliderindexList=last_index[0].slice(1)
         sliderindexList.push(sliderFullDATA.length)
-      console.log("sliderindexList :",sliderindexList)
-      console.log("event.target.value :",event.target.value)
-
+      //console.log("sliderindexList :",sliderindexList)
+      //console.log("event.target.value :",event.target.value)
+     
       let startTrain=0;
       setsliderText(`${clicks} testing batch < ${Nbatch} Frames (${Nbatch-clicks} batch needed more)`)
       setsliderInd(clicks)
@@ -805,59 +1036,54 @@ function brushend(e) {
       else{
         if (clicks>=Nbatch){   
           startTrain=sliderindexList[sliderindexList.length-Nbatch-1];
-          console.log("startTrain:",startTrain)
+         // console.log("startTrain:",startTrain)
           setsliderInd(Nbatch+1)
           setsliderText("")
           setsliderText2(`${Nbatch} Frames: ${event.target.value-1} out of ${Nbatch} batches`)
-          console.log("event.target.value :",event.target.value)
-          console.log("sliderindexList.length-Nbatch-1 :",sliderindexList.length-Nbatch-1)
-          console.log("sliderindexList.length-Nbatch-1+event.target.value :",sliderindexList.length-Nbatch-1+Number(event.target.value))
-          console.log("sliderindexList[sliderindexList.length - 1] :",sliderindexList[sliderindexList.length - 1])
+          //console.log("event.target.value :",event.target.value)
+          //console.log("sliderindexList.length-Nbatch-1 :",sliderindexList.length-Nbatch-1)
+          //console.log("sliderindexList.length-Nbatch-1+event.target.value :",sliderindexList.length-Nbatch-1+Number(event.target.value))
+          //console.log("sliderindexList[sliderindexList.length - 1] :",sliderindexList[sliderindexList.length - 1])
           if (Number(event.target.value)===1){
             setsliderText("Default")
           }
-
+          
         }
           slidersetData(prevState => ({
           ...prevState,
           sliderFullData: sliderFullDATA.slice(startTrain,sliderindexList[sliderindexList.length-Nbatch-1+Number(event.target.value)]),
-
+        
       }))
   }})
-
+  
   };
 
   const changeWidth1 = (event) => {
     setWidth1(event.target.value);
-   
-    console.log("click :",clicks)
-    console.log("history :",history)
-    console.log("history[event.target.value-1]",history[event.target.value-1]);
+    
     let FullData=[[]];
     if (Number(event.target.value)!=0){
       FullData= history[event.target.value-1]
       setsliderText1(event.target.value);
     }
     if (Number(event.target.value)==0){
-      console.log("Default")
+      
       FullData= [[]]
       setsliderText1("Default");
     }
-     //console.log("FullData:",FullData)
-     //console.log("sliderText1 :",sliderText1)
-     //console.log("sliderText1 -1 :",sliderText1-1)
+     
     //sethistoryData(history[event.target.value-1])
     setsliderInd1(clicks+1);
     sethistoryData(prevState => ({
       ...prevState,
       FullData: FullData,
-
+      
    }))
   };
 
   //History Slider PLOT START
   const svg3 = d3.select(svgRef3.current).attr("width", w).attr("height", h);
-
+ 
   //console.log("sliderdata.sliderFullData :",sliderdata.sliderFullData)
   svg3.selectAll('circle')
   .data(historydata.FullData)
@@ -868,11 +1094,11 @@ function brushend(e) {
     .attr('r',2)
     .attr('fill',d=>C(d[2])) 
     .attr('opacity',"0.5");
-
+   
   //exit
   svg3.selectAll('circle')
   .data(historydata.FullData).exit().remove();
-
+  
   //update
   svg3.selectAll('circle')
   .data(historydata.FullData)
@@ -883,11 +1109,8 @@ function brushend(e) {
   .attr('r',2)
   .attr('opacity',"0.5");
 
-
-
-
-//drawer start
-const [draweropen, setdrawerOpen] = useState(false);
+  //drawer start
+  const [draweropen, setdrawerOpen] = useState(false);
 
   const showDrawer = () => {
     setdrawerOpen(true);
@@ -896,7 +1119,7 @@ const [draweropen, setdrawerOpen] = useState(false);
   const onClose = () => {
     setdrawerOpen(false);
   };
-const [draweropen2, setdrawerOpen2] = useState(false);
+  const [draweropen2, setdrawerOpen2] = useState(false);
 
   const showDrawer2 = () => {
     setdrawerOpen2(true);
@@ -905,16 +1128,65 @@ const [draweropen2, setdrawerOpen2] = useState(false);
   const onClose2 = () => {
     setdrawerOpen2(false);
   };
+  //drawer end
 
 
-//drawer end
+
+  //adding points start
+  const AddingPoints=() => {    
+      AddingPointsList=[] //to reset the list
+     
+      if (((addNum+1)%2===1)&&(deleteNum%2===0)){
+        console.log("에딩작동",addNum+1)
+        svg
+        .on("click", function(event, d) {    
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1])])  
+            // console.log("Adding BUTTON_AddingPointsList :",AddingPointsList)
+              let origin=data.FullData     
+              origin.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),2])
+              console.log("뭐야에딩",xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]))
+              setData(prevState => ({
+                ...prevState,
+                DATA: origin,
+              }))
+        });
+    }
+    console.log("더해진다")
+    setaddNum(addNum+1)
+  }
+    //adding points end
+
+
+    //deleting points start
+    const DeletingPoints=() => {
+      
+      console.log("나눔",(deleteNum+1)%2)
+     // if (IsAdding===true){
+     //   console.log("Adding is ON")
+     //   IsDeleting=false;
+     // }
+      if ((deleteNum+1)%2===1){
+        console.log("딜리팅")
+      
+        Dataval
+        .on('click', function(){
+          d3.select(this).attr('stroke', '#000').attr('stroke-width', 4);
+          DeletingPointsList.push([xSB(this.cx["baseVal"]["value"]),ySB(this.cy["baseVal"]["value"])])  
+          console.log("Deleting BUTTON_DeletingPointsList :",DeletingPointsList)
+          d3.select(this).attr('opacity', 0);
+        })
+      }
+      setdeleteNum(deleteNum+1)
+    }
+    //deleting points end
 
 
   const outl = () => {
-    console.log("new button :data.out_indices",data.out_indices)
-    console.log("outlier :",outlier)
+    //console.log("new button :data.out_indices",data.out_indices)
+    //console.log("outlier :",outlier)
     myFunction2(outlier,data.out_indices);
   }
+
 
   return (
     <div style={{ margin: 10 ,width:"95%",height:"90%"}}>
@@ -933,7 +1205,6 @@ const [draweropen2, setdrawerOpen2] = useState(false);
                 <p style={{fontSize: "14px",color: "DimGrey",marginLeft: 30}}>Incorrect Classification</p>
                     <table style ={{fontSize: "8px",marginLeft: 30}}id="demo"></table>   
                 <Divider/>
-                <Button size="small" shape="round" style={{ width:"200px",fontSize: "13px",color: "white", marginLeft: 30,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={AreaClick}>Area Selection</Button>
 
                 <p style={{fontSize: "14px",color: "DimGrey",marginLeft: 30}}>Area Incorrect Classification</p>
                     <table style ={{fontSize: "8px",marginLeft: 30}}id="demo2"></table>        
@@ -946,16 +1217,23 @@ const [draweropen2, setdrawerOpen2] = useState(false);
                     Check All</Checkbox>
               <CheckboxGroup options={plainOptions} value={checkedList} onChange={onSingleChange}/>        
             </div>
-            <Spin tip="Loading" size="small">
-              <div className="content" />
-            </Spin>
-          </Content>
+
+
+
+          </Content> 
         <Layout style={{backgroundColor:'White'}}>
           <svg ref={svgRef} />
         </Layout>
+        
+        <br></br>
+        <br></br>
+        <Layout style={{backgroundColor: "white"}}>
+          <svg ref = {svgRef4} />
+        </Layout>
+
         <Divider />
         </Layout>
-      <Sider width={"135"} height={"5"} style={{backgroundColor:'OldLace',marginLeft: 100,marginRight: 10}}>  
+      <Sider width={"135"} height={"5"} style={{backgroundColor:'White',marginLeft: 100,marginRight: 10}}>  
        <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>Tool Tips</p>        
        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
           Process 
@@ -971,9 +1249,11 @@ const [draweropen2, setdrawerOpen2] = useState(false);
 
         </Drawer>
 
+
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer2}>
         History
         </Button>
+
         <Drawer title="History" size="large" placement="right" onClose={onClose2} open={draweropen2}>
             <h4> {sliderText1} plot</h4>
             <div className="slidecontainer">
@@ -983,11 +1263,26 @@ const [draweropen2, setdrawerOpen2] = useState(false);
             </div>
         </Drawer>
       
+
+        <Divider/>
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "black", marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AreaClick}>
+          Area Selection</Button>
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "black", marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "white", borderColor: "black" }} onClick={DotClick}>
+          Dot Selection</Button>
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "black", marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints}>
+        Adding Points
+        </Button> 
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "black", marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={DeletingPoints}>
+        Deleting Points
+        </Button> 
+
+        <p style={{fontSize: "12px",color: "DimGrey",marginLeft: 30}}>IsAdding {IsAdding}</p>
+
       </Sider>
       </Layout>
       
     </div>
   );
 };
- 
+
 export default App; 
