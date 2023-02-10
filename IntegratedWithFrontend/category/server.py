@@ -97,7 +97,7 @@ def BackendData():
             
             Threshold=float(request.form.get('Threshold'))
             Nbatch=int(request.form.get('Nbatch'))
-            #last_index = request.form.get('last_index')
+            #last_index = request.form.get('last_index') 
             clicks = int(request.form.get('clicks'))
             #print(last_index) 
             #if clicks != 1: 
@@ -177,7 +177,7 @@ def BackendData():
             print(np.unique(data[:,2])) #['astro-ph' 'cond-mat' 'cs' 'gr-qc' 'hep-ex' 'hep-lat' 'hep-ph' 'hep-th' 'math' 'other' 'physics' 'quant-ph']
             ####
             
-            #category option2: inlier(2~13)=each color, outlier(1)=red, adding point(-1)=purple ####
+            #category option2: category option2: inlier(2~13)=each color, outlier(1)=red, adding inlier point(-1), adding outlier(-2)####
             data_short=data[0:10000]
             cat1=data_short[data_short[:,2]=='astro-ph'] #2 => DIF => append outlier  [1,2,2] [100,200,1]
             cat2=data_short[data_short[:,2]=='cond-mat'] #3 [1,2,3] [100,200,1]
