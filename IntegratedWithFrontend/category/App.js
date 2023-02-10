@@ -34,9 +34,12 @@ let in_indicesList2 = [];
 let inlier2=[];
 
 let AddingPointsList=[];
+let AddingPointsList2=[];
 let DeletingPointsList=[];
 let IsDeleting=false;
 let IsAdding=false;
+let IsAdding2=false;
+
 
 let history=[];
 
@@ -133,216 +136,204 @@ class SliderOk extends React.Component {
     let miscal4; //deleting
     let miscal5; //adding
     let Totalmiscal;
-  //Deleting points to (0,0)
-  console.log( "IsDeleting :",IsDeleting ,"DeletingPointsList:",DeletingPointsList)
-  if (IsDeleting){
+    //Deleting points to (0,0)
+    console.log( "IsDeleting :",IsDeleting ,"IsAdding:",IsAdding,"IsAdding2:",IsAdding2,"IsAreaLasso:",IsAreaLasso,"IsDot:",IsDot)
+    if (IsDeleting){
+      console.log("IsDeleting ON")
+      miscal4 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
 
-    miscal4 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
-
-    for(var i=0;i<DeletingPointsList.length;i++)  
-    {
-      //outlier->inlier
-      for(var j=0;j<outlier.length;j++)
+      for(var i=0;i<DeletingPointsList.length;i++)  
       {
-          if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
+        //outlier
+        for(var j=0;j<outlier.length;j++)
         {
-          miscal4.push([0,0,0,out_indicesList[j]]);
+            if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
+          {
+            miscal4.push([0,0,0,out_indicesList[j]]);
+          }
         }
-      }
-      //inlier->outlier
-      for(var j=0;j<inlier.length;j++)
-      {
-
-        if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
-        { 
-          miscal4.push([0,0,1,in_indicesList[j]]);
-        }
-      }
-      console.log("miscal4 :",miscal4) 
-    } 
-}
-if (IsAdding){
-
-  miscal5 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
-
-  for(var i=0;i<AddingPointsList.length;i++)  
-  {
-    //outlier->inlier
-    for(var j=0;j<outlier.length;j++)
-    {
-        if(Math.abs(AddingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(AddingPointsList[i][1]-outlier[j][1]) < 0.0001)
-      {
-        var x = outlier[j][0];
-        var y = outlier[j][1];
-        miscal5.push([x,y,0,out_indicesList[j]]);
-      }
-    }
-    //inlier->outlier
-    for(var j=0;j<inlier.length;j++)
-    {
-
-      if(Math.abs(AddingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(AddingPointsList[i][1]-inlier[j][1]) < 0.0001)
-      { 
-        var x = inlier[j][0];
-        var y = inlier[j][1];
-        miscal5.push([x,y,1,in_indicesList[j]]);
-      }
-    }
-    console.log("miscal5 :",miscal5) 
-  } 
-}
-
-//Lasso start
-
-if ((IsAreaLasso===true) && (IsDot===true)){
-  //combining both
-  LassoData.push(val[0])
-  console.log("Both of lasso, dot",LassoData)
-  miscal2 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
-  for(var i=0;i<LassoData.length;i++) 
-    {
-      //outlier->inlier
-      for(var j=0;j<outlier.length;j++)
-      {
-       
-         if(Math.abs(LassoData[i][0]-outlier[j][0]) < 0.0001 && Math.abs(LassoData[i][1]-outlier[j][1]) < 0.0001)
+        //inlier
+        for(var j=0;j<inlier.length;j++)
         {
-         // console.log("outlier->inlier");
-          var x = outlier[j][0];
-          var y = outlier[j][1];
-          miscal2.push([x,y,0,out_indicesList[j]]);
+
+          if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
+          { 
+            miscal4.push([0,0,1,in_indicesList[j]]);
+          }
         }
-      }
-      //inlier->outlier
-      for(var j=0;j<inlier.length;j++)
-      {
-  
-        if(Math.abs(LassoData[i][0]-inlier[j][0]) < 0.0001 && Math.abs(LassoData[i][1]-inlier[j][1]) < 0.0001)
-        {
-         // console.log("inlier->outlier");
-          var x = inlier[j][0];
-          var y = inlier[j][1];
-          miscal2.push([x,y,1,in_indicesList[j]]);
-        }
+        console.log("Deleting miscal4 :",miscal4) 
       } 
-    console.log("miscal2 :",miscal2) 
-    }
-  IsAreaLasso=false
-  IsDot=false
-  Totalmiscal=miscal2
-}
-if ((IsAreaLasso===true) && (IsDot===false)){
-  console.log("only lasso")
-  miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
-  for(var i=0;i<LassoData.length;i++) 
-    {
-      //outlier->inlier
-      for(var j=0;j<outlier.length;j++)
-      {
-       
-         if(Math.abs(LassoData[i][0]-outlier[j][0]) < 0.0001 && Math.abs(LassoData[i][1]-outlier[j][1]) < 0.0001)
-        {
-         // console.log("outlier->inlier");
-          var x = outlier[j][0];
-          var y = outlier[j][1];
-          miscal3.push([x,y,0,out_indicesList[j]]);
-        }
-      }
-      //inlier->outlier
-      for(var j=0;j<inlier.length;j++)
-      {
-  
-        if(Math.abs(LassoData[i][0]-inlier[j][0]) < 0.0001 && Math.abs(LassoData[i][1]-inlier[j][1]) < 0.0001)
-        {
-         // console.log("inlier->outlier");
-          var x = inlier[j][0];
-          var y = inlier[j][1];
-          miscal3.push([x,y,1,in_indicesList[j]]);
-        }
-      } 
-    console.log("miscal3 :",miscal3) 
-    }
-  IsAreaLasso=false
-  Totalmiscal=miscal3
-}
-//Lasso end
-
-if ((IsAreaLasso===false) && (IsDot===true)){
- //point selection
- console.log("only dot")
-    var z = val.length;
-  //  console.log("val:",val)
-    miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
-  //  console.log("X --------- X ---------- Y -------------- Y")
-    for(var i=0;i<z;i++)
-    {
-      for(var j=0;j<outlier.length;j++)
-      {
-
-         if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
-        {
-      //    console.log("Yessss");
-          var x = outlier[j][0];
-          var y = outlier[j][1];
-          miscal.push([x,y,0,out_indicesList[j]]);
-        }
-      }
-      for(var j=0;j<inlier.length;j++)
-      {
-
-        if(Math.abs(val[i][0]-inlier[j][0]) < 0.0001 && Math.abs(val[i][1]-inlier[j][1]) < 0.0001)
-        {
-          var x = inlier[j][0];
-          var y = inlier[j][1];
-          miscal.push([x,y,1,in_indicesList[j]]);
-        }
-      }
-    }
-    Totalmiscal=miscal
   }
-   // console.log("TESTING INPUTS");
-    clicks += 1;
-    if(last_index.length == 0)
-    { 
+  
+  miscal5 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+  if (IsAdding2===true){
+    console.log("IsADDING2 ON")
+    for (var i=0;i<AddingPointsList2.length;i++) {
+      miscal5.push(AddingPointsList2[i])}
 
-      last_index.push(Number(this.state.value3));
-    }
-    else
-    {
-      var temp = last_index.length;
-     // console.log(temp, last_index[temp - 1]);
-      last_index.push( Number(last_index[temp-1]) + Number(this.state.value3));
-    }
-
-    var Threshold = this.state.value2;
-   // console.log(Threshold);
-
-    if(Threshold == "Comparitive Value")
-    {
-      Threshold = 0;
-    }
-    else
-    {
-      Threshold = this.state.value2; 
-    }
-   // console.log(this.state.value1, Threshold, this.state.value3);
-   // console.log(last_index);
-
+  }
+  if (IsAdding===true){
+    console.log("IsADDING ON")
     
-   // console.log("MISCAL:",miscal);
-   // const newdata={FullData:'[[]]',XYData:qs.stringify(miscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
-     
-    const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
+    for (var i=0;i<AddingPointsList.length;i++) {
+      miscal5.push(AddingPointsList[i])}
+    
+  }
+  console.log("Adding: miscal5 :",miscal5) 
+  
 
-    let data = qs.stringify(newdata)
-    //console.log("data!!:",qs.parse(data))
-    axios.post(`http://localhost:5000/BackendData`,data,
-    {
-        headers:{
-            'Content-Type': 'application/x-www-form-urlencoded'
+
+  //Lasso start
+
+  if ((IsAreaLasso===true) && (IsDot===true)){
+    //combining both
+    LassoData.push(val[0])
+    console.log("IsAreaLasso ON & IsDot ON")
+    console.log("Both of lasso, dot",LassoData)
+    miscal2 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+    for(var i=0;i<LassoData.length;i++) 
+      {
+        //outlier->inlier
+        for(var j=0;j<outlier.length;j++)
+        {
+        
+          if(Math.abs(LassoData[i][0]-outlier[j][0]) < 0.0001 && Math.abs(LassoData[i][1]-outlier[j][1]) < 0.0001)
+          {
+          // console.log("outlier->inlier");
+            var x = outlier[j][0];
+            var y = outlier[j][1];
+            miscal2.push([x,y,0,out_indicesList[j]]);
+          }
         }
-    })  
-  };
+        //inlier->outlier
+        for(var j=0;j<inlier.length;j++)
+        {
+    
+          if(Math.abs(LassoData[i][0]-inlier[j][0]) < 0.0001 && Math.abs(LassoData[i][1]-inlier[j][1]) < 0.0001)
+          {
+          // console.log("inlier->outlier");
+            var x = inlier[j][0];
+            var y = inlier[j][1];
+            miscal2.push([x,y,1,in_indicesList[j]]);
+          }
+        } 
+      console.log("Both incorrection : miscal2 :",miscal2) 
+      }
+    IsAreaLasso=false
+    IsDot=false
+    Totalmiscal=miscal2
+  }
+  if ((IsAreaLasso===true) && (IsDot===false)){
+    console.log("only lasso ON")
+    miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+    for(var i=0;i<LassoData.length;i++) 
+      {
+        //outlier->inlier
+        for(var j=0;j<outlier.length;j++)
+        {
+        
+          if(Math.abs(LassoData[i][0]-outlier[j][0]) < 0.0001 && Math.abs(LassoData[i][1]-outlier[j][1]) < 0.0001)
+          {
+          // console.log("outlier->inlier");
+            var x = outlier[j][0];
+            var y = outlier[j][1];
+            miscal3.push([x,y,0,out_indicesList[j]]);
+          }
+        }
+        //inlier->outlier
+        for(var j=0;j<inlier.length;j++)
+        {
+    
+          if(Math.abs(LassoData[i][0]-inlier[j][0]) < 0.0001 && Math.abs(LassoData[i][1]-inlier[j][1]) < 0.0001)
+          {
+          // console.log("inlier->outlier");
+            var x = inlier[j][0];
+            var y = inlier[j][1];
+            miscal3.push([x,y,1,in_indicesList[j]]);
+          }
+        } 
+      console.log("Area incorrection :miscal3 :",miscal3) 
+      }
+    IsAreaLasso=false
+    Totalmiscal=miscal3
+  }
+  //Lasso end
+
+  if ((IsAreaLasso===false) && (IsDot===true)){
+  //point selection
+  console.log("only dot ON")
+      var z = val.length;
+    //  console.log("val:",val)
+      miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
+    //  console.log("X --------- X ---------- Y -------------- Y")
+      for(var i=0;i<z;i++)
+      {
+        for(var j=0;j<outlier.length;j++)
+        {
+
+          if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
+          {
+        //    console.log("Yessss");
+            var x = outlier[j][0];
+            var y = outlier[j][1];
+            miscal.push([x,y,0,out_indicesList[j]]);
+          }
+        }
+        for(var j=0;j<inlier.length;j++)
+        {
+
+          if(Math.abs(val[i][0]-inlier[j][0]) < 0.0001 && Math.abs(val[i][1]-inlier[j][1]) < 0.0001)
+          {
+            var x = inlier[j][0];
+            var y = inlier[j][1];
+            miscal.push([x,y,1,in_indicesList[j]]);
+          }
+        }
+      }
+      Totalmiscal=miscal
+      console.log("Dot incorrection: miscal:",miscal)
+    }
+    // console.log("TESTING INPUTS");
+      clicks += 1;
+      if(last_index.length == 0)
+      { 
+
+        last_index.push(Number(this.state.value3));
+      }
+      else
+      {
+        var temp = last_index.length;
+      // console.log(temp, last_index[temp - 1]);
+        last_index.push( Number(last_index[temp-1]) + Number(this.state.value3));
+      }
+
+      var Threshold = this.state.value2;
+    // console.log(Threshold);
+
+      if(Threshold == "Comparitive Value")
+      {
+        Threshold = 0;
+      }
+      else
+      {
+        Threshold = this.state.value2; 
+      }
+     
+      const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
+
+      let data = qs.stringify(newdata)
+      //console.log("data!!:",qs.parse(data))
+      axios.post(`http://localhost:5000/BackendData`,data,
+      {
+          headers:{
+              'Content-Type': 'application/x-www-form-urlencoded'
+          }
+      })  
+     //RESET LIST
+      AddingPointsList=[] 
+      AddingPointsList2=[]
+      DeletingPointsList=[]
+    };
 
   render() {
 
@@ -494,7 +485,8 @@ const App = () => {
   const [deleteColor, setdeleteColor] = useState("black");
   const [addNum, setaddNum] = useState(0);
   const [addColor, setaddColor] = useState("black");
-  
+  const [addNum2, setaddNum2] = useState(0);
+  const [addColor2, setaddColor2] = useState("black");
   
 
   const svgRef = useRef();
@@ -624,15 +616,15 @@ const App = () => {
 
   //Binary : inlier(0)=green, outlier(1)=red, adding point(-1)=purple
   
-  //category option2: inlier(2~13)=each color, outlier(1)=red, adding point(-1)=purple ####
+  //category option2: inlier(2~13)=each color, outlier(1)=red, adding inlier point(-1), adding outlier(-2)####
   var C=d3.scaleOrdinal()
-  .domain(["0", "1", "-1","2","3","4","5","6","7","8","9","10","11","12","13"])
-  .range([ "green","red","purple","Lumber","Aero,'Honeydew","blanced Almond","Blizzard Blue","Ash Gray","Timberwolf","Isabelline","Laurel Green","mint"])
+  .domain(["0", "1", "-1","-2","2","3","4","5","6","7","8","9","10","11","12","13"])
+  .range([ "green","red","#4ECCA3","#F70776","Lumber","Aero,'Honeydew","blanced Almond","Blizzard Blue","Ash Gray","Timberwolf","Isabelline","Laurel Green","mint"])
   
 
 
   //enter
-  console.log("data.FullData:",data.FullData)
+  //console.log("data.FullData:",data.FullData)
   svg.selectAll('circle')
   .data(data.FullData)
   .enter() 
@@ -851,16 +843,19 @@ const AreaLasso=() => {
     lassoNum=0;
     IsDeleting=false;
     IsAdding=false;
+    IsAdding2=false;
     IsDot=false;
     IsAreaLasso=false
     setincorrectNum(0)
     setdeleteNum(0)
     setaddNum(0)
+    setaddNum2(0)
    
    
     setincorrectColor('black')
     setdeleteColor('black')
     setaddColor('black')
+    setaddColor2('black')
   
     val = [];
     myFunction(val) // have to be deleted
@@ -1042,11 +1037,10 @@ const [draweropen2, setdrawerOpen2] = useState(false);
  
 
 
-//adding points start
+//adding inlier points start
 const AddingPoints=() => {
   IsAdding=true;    
-  AddingPointsList=[] //to reset the list
-  console.log("---------------------------------")
+ 
   if ((addNum+1)%2===1){  
     setaddColor("red")}
   else{setaddColor("black")}
@@ -1055,8 +1049,8 @@ const AddingPoints=() => {
     .on("click", function(event, d) {  
       if (((addNum+1)%2===1)&&(deleteNum%2===0)){  
           
-          AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1])])  
-        // console.log("Adding BUTTON_AddingPointsList :",AddingPointsList)
+          AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),0])  
+          
           let origin=data.FullData     
           origin.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-1])
           
@@ -1065,14 +1059,46 @@ const AddingPoints=() => {
             DATA: origin,
           }))
         }
+        else{console.log("Adding inlier Turned Off")
+        }    
+    })
+  console.log("INLIER Adding BUTTON_AddingPointsList :",AddingPointsList)
+  setaddNum(addNum+1)
+}
+//adding points end
+
+
+//adding outlier points start
+const AddingPoints2=() => {
+  IsAdding2=true;    
+  
+  if ((addNum2+1)%2===1){  
+    setaddColor2("red")}
+  else{setaddColor2("black")}
+
+  svg
+    .on("click", function(event, d) {  
+      if (((addNum2+1)%2===1)&&(deleteNum%2===0)){  
+          
+          AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),1])  
+          
+          let origin2=data.FullData     
+          origin2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-2])
+          
+          setData(prevState => ({
+            ...prevState,
+            DATA: origin2,
+          }))
+        }
 
         else{
           
-          console.log("Adding Turned Off")
+          console.log("Adding outlier Turned Off")
           
           }
     })
-setaddNum(addNum+1)
+  console.log("OUTLIER Adding BUTTON_AddingPointsList2 :",AddingPointsList2)
+  setaddNum2(addNum2+1)
 }
 //adding points end
 
@@ -1175,15 +1201,17 @@ const outl = () => {
         </Drawer>
         
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: addColor, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints}>
-        Adding Points
+        Adding Inlier
         </Button> 
-        
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: addColor2, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints2}>
+        Adding Outlier
+        </Button>
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: deleteColor, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={DeletingPoints}>
         Deleting Points
         </Button> 
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: incorrectColor, marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "white", borderColor: "black" }} onClick={DotClick}>
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: incorrectColor, marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={DotClick}>
           Dot Selection</Button>
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: 'black', marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AreaLasso}>Area Selection</Button>
+        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: 'black', marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={AreaLasso}>Area Selection</Button>
         
         
       </Sider>
