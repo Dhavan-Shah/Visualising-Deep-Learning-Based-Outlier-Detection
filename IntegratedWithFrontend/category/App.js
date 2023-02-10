@@ -127,15 +127,17 @@ class SliderOk extends React.Component {
 //Timer End
 
     n_Post+=1
-    let miscal;
-    let miscal2;
-    let miscal3;
+    let miscal; //val, dot incorection
+    let miscal2; // both of dot and area
+    let miscal3; // area
+    let miscal4; //deleting
+    let miscal5; //adding
     let Totalmiscal;
   //Deleting points to (0,0)
- // console.log( "IsDeleting :",IsDeleting )
+  console.log( "IsDeleting :",IsDeleting ,"DeletingPointsList:",DeletingPointsList)
   if (IsDeleting){
 
-    miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+    miscal4 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
 
     for(var i=0;i<DeletingPointsList.length;i++)  
     {
@@ -144,7 +146,7 @@ class SliderOk extends React.Component {
       {
           if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
         {
-          miscal3.push([0,0,0,out_indicesList[j]]);
+          miscal4.push([0,0,0,out_indicesList[j]]);
         }
       }
       //inlier->outlier
@@ -153,18 +155,47 @@ class SliderOk extends React.Component {
 
         if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
         { 
-          miscal3.push([0,0,1,in_indicesList[j]]);
+          miscal4.push([0,0,1,in_indicesList[j]]);
         }
       }
-     // console.log("miscal3 :",miscal3) 
+      console.log("miscal4 :",miscal4) 
     } 
 }
+if (IsAdding){
 
+  miscal5 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+
+  for(var i=0;i<AddingPointsList.length;i++)  
+  {
+    //outlier->inlier
+    for(var j=0;j<outlier.length;j++)
+    {
+        if(Math.abs(AddingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(AddingPointsList[i][1]-outlier[j][1]) < 0.0001)
+      {
+        var x = outlier[j][0];
+        var y = outlier[j][1];
+        miscal5.push([x,y,0,out_indicesList[j]]);
+      }
+    }
+    //inlier->outlier
+    for(var j=0;j<inlier.length;j++)
+    {
+
+      if(Math.abs(AddingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(AddingPointsList[i][1]-inlier[j][1]) < 0.0001)
+      { 
+        var x = inlier[j][0];
+        var y = inlier[j][1];
+        miscal5.push([x,y,1,in_indicesList[j]]);
+      }
+    }
+    console.log("miscal5 :",miscal5) 
+  } 
+}
 
 //Lasso start
 
 if ((IsAreaLasso===true) && (IsDot===true)){
-  
+  //combining both
   LassoData.push(val[0])
   console.log("Both of lasso, dot",LassoData)
   miscal2 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
@@ -301,7 +332,7 @@ if ((IsAreaLasso===false) && (IsDot===true)){
    // console.log("MISCAL:",miscal);
    // const newdata={FullData:'[[]]',XYData:qs.stringify(miscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
      
-    const newdata={FullData:'[[]]',XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
+    const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
 
     let data = qs.stringify(newdata)
     //console.log("data!!:",qs.parse(data))
@@ -684,7 +715,7 @@ const App = () => {
 
 //Area Lasso Start
 const AreaLasso=() => {
-  
+   
   lassoNum++;
   
   if ((lassoNum%2)===1){
@@ -818,7 +849,10 @@ const AreaLasso=() => {
   const SethandleClick=() => {
     //initializing deleting and adding points button
     lassoNum=0;
-    
+    IsDeleting=false;
+    IsAdding=false;
+    IsDot=false;
+    IsAreaLasso=false
     setincorrectNum(0)
     setdeleteNum(0)
     setaddNum(0)
@@ -1009,7 +1043,8 @@ const [draweropen2, setdrawerOpen2] = useState(false);
 
 
 //adding points start
-const AddingPoints=() => {    
+const AddingPoints=() => {
+  IsAdding=true;    
   AddingPointsList=[] //to reset the list
   console.log("---------------------------------")
   if ((addNum+1)%2===1){  
@@ -1044,6 +1079,7 @@ setaddNum(addNum+1)
 
  //deleting points start
  const DeletingPoints=() => {
+  IsDeleting=true
   if ((deleteNum+1)%2===1){  
     setdeleteColor("red")}
   else{setdeleteColor("black")}   
@@ -1064,6 +1100,7 @@ setaddNum(addNum+1)
    
   }
   setdeleteNum(deleteNum+1)
+  console.log("deleting!!!!!",DeletingPointsList) 
 }
 //deleting points end
 
@@ -1130,7 +1167,7 @@ const outl = () => {
         </Button>
         <Drawer title="History" size="large" placement="right" onClose={onClose2} open={draweropen2}>
             <h4> {sliderText1} plot</h4>
-            <div className="slidecontainer">
+            <div className="slidecontainer"> 
             <input type='range'  className="slider" id="myRange1" onChange={changeWidth1}
               min={0} max={sliderInd1} step={1} value={width1} ></input>
               <svg ref={svgRef3} />
@@ -1140,6 +1177,7 @@ const outl = () => {
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: addColor, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints}>
         Adding Points
         </Button> 
+        
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: deleteColor, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={DeletingPoints}>
         Deleting Points
         </Button> 
