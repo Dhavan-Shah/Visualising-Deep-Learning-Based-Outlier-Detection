@@ -83,7 +83,10 @@ def BackendData():
             XYData = np.delete(data_short, -1, axis=1)
             color_list=data_short[:,-1]
             NumberofData=len(data)
-
+            DeletingData=request.form.get('DeletingData')
+            print("DeletingData:",DeletingData)
+            AddingData =request.form.get('AddingData')
+            print("AddingData:",AddingData)
             XYData=request.form.get('XYData')
             
             color_list =request.form.get('color_list')
@@ -176,8 +179,8 @@ def BackendData():
             
             #category option2: inlier(2~13)=each color, outlier(1)=red, adding point(-1)=purple ####
             data_short=data[0:10000]
-            cat1=data_short[data_short[:,2]=='astro-ph']
-            cat2=data_short[data_short[:,2]=='cond-mat']
+            cat1=data_short[data_short[:,2]=='astro-ph'] #2 => DIF => append outlier  [1,2,2] [100,200,1]
+            cat2=data_short[data_short[:,2]=='cond-mat'] #3 [1,2,3] [100,200,1]
             cat3=data_short[data_short[:,2]=='cs']
             cat4=data_short[data_short[:,2]=='gr-qc']
             cat5=data_short[data_short[:,2]=='hep-ex']
@@ -317,7 +320,7 @@ def BackendData():
                 
             else: 
                 data_get=data_short[0:min(last_index[-1]+BatchSize, 10000)]
-                
+                  
             XYData_get = np.delete(data_get, -1, axis=1)
             color_list_get=data_get[:,-1] 
             #print("l is ",sum(l))
