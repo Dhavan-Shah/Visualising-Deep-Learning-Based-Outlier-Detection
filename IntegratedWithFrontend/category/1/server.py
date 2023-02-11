@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
+ 
 
-
-      
+       
 
 """
 X = pd.read_csv('E:/Python/Projects/IForest/deep-iforest-main/data/tabular/shuttle_16.csv').to_numpy()
@@ -57,10 +57,12 @@ data=pd.read_csv("C:/Users/minjo/Downloads/HR_diagram.csv").to_numpy()
 data_short=data[0:10000]
 Threshold=0
 Nbatch=0 
-BatchSize = 100
+BatchSize = 10
 last_index = []
-#######
 
+FileName="HR_diagram.csv"
+#######
+ 
 
 @app.route("/BackendData", methods=['GET','POST'])
 def BackendData():
@@ -71,11 +73,20 @@ def BackendData():
     global Nbatch
     global BatchSize
     global last_index
-    n = 100 
+    n = 10 
     if request.method=='POST':
         print("POST CONNECTED")
-        FileName=request.form.get('FileName')
+        
         print("post, Filename : ",FileName)
+        if (FileName!=request.form.get('FileName')):
+            print("!!FILE is CHANGED!!")
+           
+            FileName=request.form.get('FileName')
+            Threshold=0
+            Nbatch=0 
+            BatchSize = 10
+            last_index = []
+
         if (FileName=="HR_diagram.csv"):
             #Binary : inlier(0)=green, outlier(1)=red, adding point(-1)=purple
             data=pd.read_csv("C:/Users/minjo/Downloads/HR_diagram.csv").to_numpy()
@@ -84,9 +95,9 @@ def BackendData():
             color_list=data_short[:,-1]
             NumberofData=len(data)
             DeletingData=request.form.get('DeletingData')
-            print("DeletingData:",DeletingData)
+            #print("DeletingData:",DeletingData)
             AddingData =request.form.get('AddingData')
-            print("AddingData:",AddingData)
+            #print("AddingData:",AddingData)
             XYData=request.form.get('XYData')
             
             color_list =request.form.get('color_list')
@@ -102,7 +113,7 @@ def BackendData():
             #print(last_index) 
             #if clicks != 1: 
             if len(XYDatalst)>8:
-                print("XYDatalst :",XYDatalst)             
+                #print("XYDatalst :",XYDatalst)             
                 XY = []
                 t = 0  
                 al = []
@@ -119,7 +130,7 @@ def BackendData():
                     cl.append(int(c[0]))
                     dl.append(float(d))
                     t += 1
-                print("al :",al)
+               # print("al :",al)
                 for j in range(int(a[-1])+1):
                     XY.append([0,0,0,0])
                     for k in range(4):
@@ -127,61 +138,61 @@ def BackendData():
                         XY[j][k] = dl[j*4+k]
                 XY.pop(0)
                 XY.pop(0)
-                print("XY :",XY)  
+               # print("XY :",XY)  
 
                 for i in range(len(XY)):
-                    print("XY[i] : ",XY[i], "data_short[int(XY[i][3])][2]:",data_short[int(XY[i][3])][2], "XY[i][2]:",XY[i][2])
+                   # print("XY[i] : ",XY[i], "data_short[int(XY[i][3])][2]:",data_short[int(XY[i][3])][2], "XY[i][2]:",XY[i][2])
                     data_short[int(XY[i][3])][2] = int(XY[i][2])
             else:
                 print("No points selected")
                     
                     
             lastindex = request.form.get('last_index')
-            print(lastindex)
+           # print(lastindex)
             last = list(map(int,lastindex.split(',')))
-            print(last)
+          #  print(last)
             n = int(last[-1])
             last_index.append(last[-1]) 
             print(last_index)
             if last_index == 0:
-                last_index = BatchSize
+                last_index = BatchSize 
             l.append(n)  
             num=sum(l)   
             # data_put -> Train Data
-            print("Start Index Train : " , max(last_index[-1]-BatchSize, 0))
-            print("End Index Train :", min(last_index[-1], len(data_short)))
-            print("Start Index Test : " , max(min(last_index[-1] - (Nbatch-1)*BatchSize, len(data_short)), 0))
-            print("End Index Test :", min(last_index[-1]+BatchSize, len(data_short)))
+          #  print("Start Index Train : " , max(last_index[-1]-BatchSize, 0))
+          #  print("End Index Train :", min(last_index[-1], len(data_short)))
+           # print("Start Index Test : " , max(min(last_index[-1] - (Nbatch-1)*BatchSize, len(data_short)), 0))
+            #print("End Index Test :", min(last_index[-1]+BatchSize, len(data_short)))
             data_put=data_short[max(last_index[-1]-BatchSize, 0):min(last_index[-1], len(data_short))]
             data_tr = data_short[max(min(last_index[-1] - (Nbatch-1)*BatchSize, len(data_short)), 0):min(last_index[-1]+BatchSize, len(data_short))]
             XYData_put = np.delete(data_put, -1, axis=1)
             color_list_put=data_put[:,-1]
-            print("n is ",num)
+            #print("n is ",num)
                 
             l.append(BatchSize)
             #data_put=data[0:sum(l)]
             XYData_put = np.delete(data_put, -1, axis=1)
             color_list_put=data_put[:,-1]
-            print("BatchSize is ",BatchSize)
-            print("Threshold is ",Threshold)
-            print("Nbatch is ",Nbatch)   
-            print("Index is", last_index)
-            print("Button Clicks is ", clicks)
-            print(len(XYData_put))
-            print(len(data_put))
-
+           # print("BatchSize is ",BatchSize)
+           # print("Threshold is ",Threshold)
+           # print("Nbatch is ",Nbatch)   
+           # print("Index is", last_index) 
+           # print("Button Clicks is ", clicks)
+           # print(len(XYData_put))
+           # print(len(data_put))
+  
             BackendData={"FullData":data_put.tolist(),"XYData":XYData_put.tolist(),"color_list":color_list_put.tolist(),"Nbatch":[Nbatch],"Threshold":[Threshold],"BatchSize":[sum(l)],"last_index":[last_index], "button_clicks": [clicks],"FileName":[FileName]}
-        else:
+        if (FileName=="arxiv_articles_UMAP.csv"):
             #please return category features
 
             data=pd.read_csv("C:/Users/minjo/Downloads/arxiv_articles_UMAP.csv").to_numpy()
-            print("category!!") #['astro-ph' 'cond-mat' 'cs' 'gr-qc' 'hep-ex' 'hep-lat' 'hep-ph' 'hep-th' 'math' 'other' 'physics' 'quant-ph']
+            print("POST category!!") #['astro-ph' 'cond-mat' 'cs' 'gr-qc' 'hep-ex' 'hep-lat' 'hep-ph' 'hep-th' 'math' 'other' 'physics' 'quant-ph']
             ####
             
             #category option2: category option2: inlier(2~13)=each color, outlier(1)=red, adding inlier point(-1), adding outlier(-2)####
             data_short=data[0:10000]
             cat1=data_short[data_short[:,2]=='astro-ph'] #2 => DIF => append outlier  [1,2,2] [100,200,1]
-            cat2=data_short[data_short[:,2]=='cond-mat'] #3 [1,2,3] [100,200,1]
+            cat2=data_short[data_short[:,2]=='cond-mat'] #3 [1,2,3] [100,200,1] 
             cat3=data_short[data_short[:,2]=='cs']
             cat4=data_short[data_short[:,2]=='gr-qc']
             cat5=data_short[data_short[:,2]=='hep-ex']
@@ -205,7 +216,7 @@ def BackendData():
             data_short[data_short=='other']=11
             data_short[data_short=='physics']=12
             data_short[data_short=='quant-ph']=13
-            print("포스트 data_short",data_short)
+            print("POST data_short",data_short)
             ######
             
             XYData = np.delete(data_short, -1, axis=1)
@@ -230,9 +241,9 @@ def BackendData():
                     
                     
             lastindex = request.form.get('last_index')
-            print(lastindex)
+            #print(lastindex)
             last = list(map(int,lastindex.split(',')))
-            print(last)
+            #print(last)
             n = int(last[-1])
             last_index.append(last[-1]) 
             print(last_index)
@@ -241,15 +252,15 @@ def BackendData():
             l.append(n)  
             num=sum(l)   
             # data_put -> Train Data
-            print("Start Index Train : " , max(last_index[-1]-BatchSize, 0))
-            print("End Index Train :", min(last_index[-1], len(data_short)))
-            print("Start Index Test : " , max(min(last_index[-1] - (Nbatch-1)*BatchSize, len(data_short)), 0))
-            print("End Index Test :", min(last_index[-1]+BatchSize, len(data_short)))
+            #print("Start Index Train : " , max(last_index[-1]-BatchSize, 0))
+            #print("End Index Train :", min(last_index[-1], len(data_short)))
+            #print("Start Index Test : " , max(min(last_index[-1] - (Nbatch-1)*BatchSize, len(data_short)), 0))
+            #print("End Index Test :", min(last_index[-1]+BatchSize, len(data_short)))
             data_put=data_short[max(last_index[-1]-BatchSize, 0):min(last_index[-1], len(data_short))]
             data_tr = data_short[max(min(last_index[-1] - (Nbatch-1)*BatchSize, len(data_short)), 0):min(last_index[-1]+BatchSize, len(data_short))]
             XYData_put = np.delete(data_put, -1, axis=1)
             color_list_put=data_put[:,-1]
-            print("n is ",num)
+            #print("n is ",num)
                 
             l.append(BatchSize)
             #data_put=data[0:sum(l)]
@@ -270,12 +281,14 @@ def BackendData():
             
         
         return BackendData 
-
-    elif request.method=='GET':
+    
+    if request.method=='GET':
+        print("======================================")
         print("GET Executed") 
         print("get, Filename : ",FileName)
         if (FileName=="HR_diagram.csv"):
-            print("HR_diagram.csv")
+            print("Same File : HR_diagram.csv")  
+            print("last_index",last_index)
             if len(last_index) == 0:
                 last_index.append(BatchSize)
                 data_get=data_short[0:last_index[-1]] 
@@ -293,8 +306,9 @@ def BackendData():
             print("Index is ", last_index)
 
             BackendData={"FullData":data_get.tolist(),"XYData":XYData_get.tolist(),"color_list":color_list_get.tolist(),"Nbatch":[Nbatch],"Threshold":[Threshold],"BatchSize":[sum(l)], "last_index":[last_index],"FileName":[FileName]}
-        else:
-            print("카테고리 겟",data_short)
+        if (FileName=="arxiv_articles_UMAP.csv"):
+            print("Category GET",data_short)
+            print("last_index",last_index)
          #please return category features
             if len(last_index) == 0:
                 last_index.append(BatchSize)
