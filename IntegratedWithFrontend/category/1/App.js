@@ -45,10 +45,11 @@ let history=[];
 
 let n_Post=-1 
 let sliderindexList=[]
-var last_index = [];
+let last_index = [];
 let clicks = 0
 
- 
+let InitdataType='Binary Feature'
+let IsDataChanged=false
 
 class SliderOk extends React.Component {
   constructor(props) {
@@ -57,7 +58,7 @@ class SliderOk extends React.Component {
     this.state = {
       value1: 3,
       value2: 0.5,
-      value3:100 ,
+      value3:10 ,
       selectValue:'HR_diagram.csv',
       CategoryType:'Binary Feature',
       timerBool:false  
@@ -106,7 +107,8 @@ class SliderOk extends React.Component {
 
   dropdownChange=e=>{
     console.log(e)
-    let dataType='binary Feature'
+    if (e!=InitdataType){IsDataChanged=true}
+    let dataType='Binary Feature'
     if (e==='arxiv_articles_UMAP.csv'){
       dataType='Category Feature'
     }
@@ -307,9 +309,15 @@ class SliderOk extends React.Component {
         last_index.push( Number(last_index[temp-1]) + Number(this.state.value3));
       }
 
-      var Threshold = this.state.value2;
-    // console.log(Threshold);
+      
+      if (IsDataChanged){
+        last_index=[]
+        last_index.push(Number(this.state.value3));
+      }
 
+      var Threshold = this.state.value2;
+    // console.log(Threshold);  
+ 
       if(Threshold == "Comparitive Value")
       {
         Threshold = 0;
@@ -318,7 +326,7 @@ class SliderOk extends React.Component {
       {
         Threshold = this.state.value2; 
       }
-     
+      console.log("뭐야???",this.state.selectValue.toString())
       const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
 
       let data = qs.stringify(newdata)
@@ -441,7 +449,7 @@ const App = () => {
   const [checkedList, setCheckedList] = useState(defaultCheckedList);
   const [indeterminate, setIndeterminate] = useState(true);
   const [checkAll, setCheckAll] = useState(false);
-  const [data, setData] = useState({FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
+  const [data, setData] = useState({colorData:"",FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
   const [historydata, sethistoryData] = useState({FullData:""})
   
   const [incorrectNum, setincorrectNum] = useState(0);
@@ -465,7 +473,7 @@ const App = () => {
   const svgRef2 = useRef();
   const svgRef3 = useRef();
   const svgRef4 = useRef();
-  const svgRefL = useRef();
+  const svgRefL = useRef(); 
   const [sliderdata, slidersetData] = useState({sliderFullData:""})
 
  
@@ -535,12 +543,12 @@ const App = () => {
     setCheckedList(e.target.checked ? plainOptions : []);
     setIndeterminate(false);
     setCheckAll(e.target.checked);
-
+ 
     if (e.target.checked){
 
       axios.get('http://localhost:5000/BackendData')
       .then(res => {
-        const DATA = res.data.XYData;
+        const DATA = res.data.XYData; 
         const color_list=res.data.color_list;
         let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
@@ -552,7 +560,7 @@ const App = () => {
         ...prevState,
         FullData:  res.data.FullData,
         DATA:DATA,
-        Outlier :Outlier,
+        Outlier :Outlier, 
         out_indices:out_indices,
         Inlier :Inlier,
         in_indices:in_indices,
@@ -567,25 +575,23 @@ const App = () => {
   let MinY;
   let MaxY;
   let w;
-  let h;
-  let colorData;
-  if (data.FileName==='arxiv_articles_UMAP.csv'){
-    MinX=0
-    MaxX=5
-    MinY=0
-    MaxY=15
-    w=800
-    h=800
-    colorData=[[-1],[-2],[-3],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[1]]
+  let h; 
+  
+  if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
+    MinX=-13
+    MaxX=10
+    MinY=-13
+    MaxY=14
+    w=700 
+    h=500
   }
   else{
-    MinX=0
+    MinX=-1
     MaxX=5
-    MinY=0
-    MaxY=16
+    MinY=-3
+    MaxY=17
     w=800
     h=450
-    colorData=[[0],[1],[-1],[-2],[-3]]  
   }
 
 
@@ -595,8 +601,8 @@ const App = () => {
 
       // y axis scale 
   const yScale = d3.scaleLinear()
-      .domain([MinY,MaxY])
-      .range([h,0])
+      .domain([MinY,MaxY]) 
+      .range([h,0])   
 
 
   //MAIN PLOT START
@@ -615,10 +621,10 @@ const App = () => {
   .domain(["0", "1", "-1","-2","-3","2","3","4","5","6","7","8","9","10","11","12","13"])
   .range([ "inlier","outlier","added inlier","added outlier","misclassification",'astro-ph' ,'cond-mat', 'cs' ,'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th', 'math', 'other' ,'physics' ,'quant-ph'])
   
-  
+  //label enter
   let svgL = d3.select(svgRefL.current).attr("width", w).attr("height", h)
   var legend = svgL.selectAll(".legend")
-    .data(colorData)
+    .data(data.colorData)
       .enter().append("g")
       .attr("class", "legend")
       .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
@@ -627,21 +633,41 @@ const App = () => {
     .attr("x",  13)
     .attr("width", 8)
     .attr("height", 8)
-    .style("fill",d=> C(d[0].toString()));
+    .style("fill",d=> C(d.toString()));
 
   legend.append("text")
     .attr("x",  30)
     .attr("y", 4)
     .attr("dy", ".35em")
     .style("text-anchor", "start")
-    .text(function(d) { return colorLabelName(d[0].toString()); });
+    .text(function(d) { return colorLabelName(d.toString()); });
 
+//label exit
+svgL.selectAll('rect')
+.data(data.colorData).exit().remove();
+svgL.selectAll('text')
+.data(data.colorData).exit().remove();
 
-
+//label update
+svgL.selectAll("rect")
+.data(data.colorData)
+  .transition()
+    .attr("x",  13)
+    .attr("width", 8)
+    .attr("height", 8)
+    .style("fill",d=> C(d.toString()));
+svgL.selectAll("text")
+.data(data.colorData)
+  .transition()
+    .attr("x",  30)
+    .attr("y", 4)
+    .attr("dy", ".35em")
+    .style("text-anchor", "start")
+    .text(function(d) { return colorLabelName(d.toString()); }); 
 
 //MAIN PLOT
   //enter
-  console.log("data.FullData:",data.FullData)
+  //console.log("data.FullData:",data.FullData)
   svg.selectAll('circle')
   .data(data.FullData)
   .enter() 
@@ -771,8 +797,7 @@ const AreaLasso=() => {
 
     function drawPath() {
         d3.select("#lasso")
-            .style("stroke", "black")
-            .style("stroke-width", 1)
+            
             .style("fill", "#00000054")
             .attr("d", lineGenerator(coords));
     }
@@ -798,7 +823,7 @@ const AreaLasso=() => {
         lassocircles.each((d, i) => {
             let point = [ xScale(d[0]),yScale(d[1])];
             if (pointInPolygon(point, coords)) {
-                d3.select("#dot-" + d[3]).attr("fill", "grey");
+                d3.select("#dot-" + d[3]).attr("fill", "yellow");
                 
                 selectedDots.push(d[3]);
                 LassoData.push([d[0],d[1]])
@@ -888,9 +913,19 @@ const AreaLasso=() => {
     .then(res => {
         //divide data into variables 
         const FileName=res.data.FileName;
-        console.log("겟버튼파일",FileName)
+        let ColorData;
+        if (FileName[0]==='arxiv_articles_UMAP.csv'){
+          ColorData=[[-1],[-2],[-3],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[1]]
+        }
+        else{
+          ColorData=[[0],[1],[-1],[-2],[-3]]
+        }
+      console.log("ColorData:",ColorData.length,ColorData)
+      
         const FullDATA = res.data.FullData;
-        
+        console.log("FullDATA:",FullDATA.length,FullDATA)
+
+
         history.push(FullDATA)
         const DATA = res.data.XYData;
         const last_index = res.data.last_index;
@@ -910,6 +945,7 @@ const AreaLasso=() => {
 
       setData(prevState => ({
         ...prevState,
+        colorData:ColorData,
         FileName:FileName,
         FullData: FullDATA,
         DATA : DATA,
@@ -1160,10 +1196,10 @@ const outl = () => {
 
 
   return (
-    <div style={{ margin: 10 ,width:"700",height:"700"}}>
+    <div style={{ margin: 10 ,width:"700",height:"600"}}>
 
       <Layout style={{  backgroundColor:'white',borderColor: "black" }}>
-        <Sider width={ "350"} height={"700"} style={{backgroundColor:'OldLace',marginLeft: 40,marginRight: 50}}>  
+        <Sider width={ "350"}  style={{height: 600,backgroundColor:'OldLace',marginLeft: 10,marginRight: 20}}>  
           <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 30,marginRight: 30}}>Outlier Detection and Monitoring<br></br> for Streaming data</p>
               <Content style={{ height:  "100%"}}>
               <Divider />
@@ -1174,8 +1210,8 @@ const outl = () => {
                 
                 </Content>
         </Sider>
-        <Layout style={{ marginTop:5,marginLeft:20,backgroundColor:'White'}}>
-            <Content style={{ width: "500"}}  >
+        <Layout style={{height: 600, marginTop:5,marginLeft:20,backgroundColor:'White'}}>
+            <Content style={{ width: 500}}  >
               <div className="container">
               <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll} >
                     Check All</Checkbox>
@@ -1183,13 +1219,12 @@ const outl = () => {
             </div>
             
           </Content>
-        <Layout style={{backgroundColor:'White'}}>
-          
+        <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
           <svg id="chart" ref={svgRef} />
         </Layout>
         
         </Layout>
-      <Sider width={"135"} height={"5"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
+      <Sider width={"135"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
        <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[  Tool Tips  ]</p>        
        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginRight: 10,marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
           Process 
