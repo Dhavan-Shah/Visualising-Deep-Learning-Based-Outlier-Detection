@@ -23,7 +23,7 @@ let out_indicesList = [];
 let outlier = [];
 let in_indicesList = [];
 let inlier=[];
-
+let InlierCat=[];
 
 let out_indicesList2 = [];
 let outlier2 = [];
@@ -139,6 +139,7 @@ class SliderOk extends React.Component {
     console.log( "IsDeleting :",IsDeleting ,"IsAdding:",IsAdding,"IsAdding2:",IsAdding2,"IsAreaLasso:",IsAreaLasso,"IsDot:",IsDot)
     //TODO: for category, oulier and inlier lists are needed
     if (IsDeleting){
+      
       console.log("IsDeleting ON")
       miscal4 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
       console.log("POST delete:",DeletingPointsList)
@@ -149,7 +150,7 @@ class SliderOk extends React.Component {
         {
             if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
           {
-            miscal4.push([0,0,0,out_indicesList[j]]);
+            miscal4.push([0,0,1,out_indicesList[j]]);
           }
         }
         //inlier
@@ -158,7 +159,7 @@ class SliderOk extends React.Component {
 
           if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
           { 
-            miscal4.push([0,0,1,in_indicesList[j]]);
+            miscal4.push([0,0,InlierCat[j],in_indicesList[j]]);
           }
         }
         console.log("Deleting miscal4 :",miscal4) 
@@ -278,6 +279,7 @@ class SliderOk extends React.Component {
             miscal.push([x,y,0,out_indicesList[j]]);
           }
         }
+        //inlier->outlier
         for(var j=0;j<inlier.length;j++)
         {
 
@@ -323,7 +325,7 @@ class SliderOk extends React.Component {
       {
         Threshold = this.state.value2; 
       }
-      console.log("뭐야???",this.state.selectValue.toString())
+      
       const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
 
       let data = qs.stringify(newdata)
@@ -439,7 +441,7 @@ const App = () => {
   const [checkedList, setCheckedList] = useState(defaultCheckedList);
   const [indeterminate, setIndeterminate] = useState(true);
   const [checkAll, setCheckAll] = useState(false);
-  const [data, setData] = useState({colorData:"",FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
+  const [data, setData] = useState({inlierCat:"",colorData:"",FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
   const [historydata, sethistoryData] = useState({FullData:""})
   
   const [incorrectNum, setincorrectNum] = useState(0);
@@ -483,9 +485,10 @@ const App = () => {
       const color_list=res.data.color_list;
       let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
       let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
-      let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
+      let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
       let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
-
+      let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
+      console.log("inlierCat:",inlierCat)
       setData(prevState => ({
         ...prevState,
         FullData:  res.data.FullData,
@@ -493,7 +496,8 @@ const App = () => {
         Outlier :Outlier,
         out_indices:out_indices,
         Inlier :Inlier,
-        in_indices:in_indices
+        in_indices:in_indices,
+        inlierCat:inlierCat
       }))
     })
     }	
@@ -544,7 +548,8 @@ const App = () => {
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
         let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
-
+        let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
+        console.log("inlierCat:",inlierCat)
 
       setData(prevState => ({
         ...prevState,
@@ -554,6 +559,7 @@ const App = () => {
         out_indices:out_indices,
         Inlier :Inlier,
         in_indices:in_indices,
+        inlierCat:inlierCat
       }))
     })
 
@@ -930,7 +936,9 @@ const AreaLasso=() => {
         inlier=Inlier;
         out_indicesList=out_indices;
         in_indicesList=in_indices;
-
+        let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
+        InlierCat=inlierCat
+        console.log("inlierCat:",inlierCat)
 
 
       setData(prevState => ({
@@ -944,6 +952,7 @@ const AreaLasso=() => {
         out_indices:out_indices,
         Inlier :Inlier,
         in_indices:in_indices,
+        inlierCat:inlierCat
      }))
   })
    }
@@ -1296,6 +1305,7 @@ const AddingPoints2=() => {
     Dataval
     .on('click', function(){
       d3.select(this)
+      
       DeletingPointsList.push([xSB(this.cx["baseVal"]["value"]),ySB(this.cy["baseVal"]["value"])])  
       //console.log("Deleting BUTTON_DeletingPointsList :",DeletingPointsList)
       
