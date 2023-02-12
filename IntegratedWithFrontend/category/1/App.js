@@ -5,9 +5,6 @@ import axios from 'axios';
 import { Select,Button ,Layout,Divider,Checkbox, Drawer,Spin} from 'antd';
 
 import * as d3 from 'd3';
-
-
-
 import "./App.css"
 
 var qs = require('qs');
@@ -140,10 +137,11 @@ class SliderOk extends React.Component {
     let Totalmiscal;
     //Deleting points to (0,0)
     console.log( "IsDeleting :",IsDeleting ,"IsAdding:",IsAdding,"IsAdding2:",IsAdding2,"IsAreaLasso:",IsAreaLasso,"IsDot:",IsDot)
+    //TODO: for category, oulier and inlier lists are needed
     if (IsDeleting){
       console.log("IsDeleting ON")
       miscal4 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
-
+      console.log("POST delete:",DeletingPointsList)
       for(var i=0;i<DeletingPointsList.length;i++)  
       {
         //outlier
@@ -169,19 +167,18 @@ class SliderOk extends React.Component {
   
   miscal5 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
   if (IsAdding2===true){
-    console.log("IsADDING2 ON")
+    console.log("Outlier IsADDING2 ON")
     for (var i=0;i<AddingPointsList2.length;i++) {
       miscal5.push(AddingPointsList2[i])}
-
   }
   if (IsAdding===true){
-    console.log("IsADDING ON")
+    console.log("Inlier:IsADDING ON")
     
     for (var i=0;i<AddingPointsList.length;i++) {
       miscal5.push(AddingPointsList[i])}
     
   }
-  console.log("Adding: miscal5 :",miscal5) 
+  console.log("Total Adding: miscal5 :",miscal5) 
   
 
 
@@ -427,13 +424,6 @@ class SliderOk extends React.Component {
   } 
 }
 
-//var NumProgress=[];
-
-
-/* function TotalFunction(Total,NumberofData) {
-  document.getElementById("Totaldemo").innerHTML = "Progress : "+(Total/NumberofData*100).toFixed(2);
-  }
- */
 
 const { Sider, Content} = Layout;
 
@@ -460,7 +450,7 @@ const App = () => {
   const [addColor, setaddColor] = useState("black");
   const [addNum2, setaddNum2] = useState(0);
   const [addColor2, setaddColor2] = useState("black");
-  
+  const [CatAddName,setCatAddName]=useState("");
 
   const svgRef = useRef();
   const [width, setWidth] = useState(0);
@@ -521,7 +511,7 @@ const App = () => {
     }	
     else if( list.includes("Inlier")) {
 
-      let in_indices1 = data.FullData.map((c,i)=>c[2]===0?i:'').filter(String);
+      let in_indices1 = data.FullData.map((c,i)=>c[2]!=1?i:'').filter(String);
       console.log( in_indices1)
 
       let inlier1 =data.FullData.filter((_, ind) => in_indices1.includes(ind));
@@ -552,7 +542,7 @@ const App = () => {
         const color_list=res.data.color_list;
         let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
-        let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
+        let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
 
 
@@ -578,20 +568,20 @@ const App = () => {
   let h; 
   
   if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
-    MinX=-13
-    MaxX=10
-    MinY=-13
-    MaxY=14
-    w=700 
-    h=500
+    MinX=-13;
+    MaxX=10;
+    MinY=-13;
+    MaxY=14;
+    w=700 ;
+    h=500;
   }
   else{
-    MinX=-1
-    MaxX=5
-    MinY=-3
-    MaxY=17
-    w=800
-    h=450
+    MinX=-1;
+    MaxX=5;
+    MinY=-3;
+    MaxY=17;
+    w=800;
+    h=450;
   }
 
 
@@ -934,7 +924,7 @@ const AreaLasso=() => {
         const color_list=res.data.color_list;
         let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
-        let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
+        let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
         outlier=Outlier; 
         inlier=Inlier;
@@ -1093,69 +1083,202 @@ const [draweropen2, setdrawerOpen2] = useState(false);
 //drawer end
  
 
-
+//let cat_list=['astro-ph' ,'cond-mat', 'cs' ,'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th', 'math', 'other' ,'physics' ,'quant-ph']
 //adding inlier points start
 const AddingPoints=() => {
-  IsAdding=true;    
- 
-  if ((addNum+1)%2===1){  
-    setaddColor("red")}
-  else{setaddColor("black")}
+  if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
+    
+    IsAdding=true;    
+  
+    if ((addNum+1)%2===1){  
+      setaddColor("red")}
+    else{setaddColor("black")}
+    
+    svg
+      .on("click", function(event, d) {  
+        if (((addNum+1)%2===1)&&(deleteNum%2===0)){  
+            if (CatAddName=='astro-ph'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),2,0])  
+            }
+            if (CatAddName=='cond-mat'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),3,0])  
+            }
+            if (CatAddName=='cs'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),4,0])  
+            }
+            if (CatAddName=='gr-qc'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),5,0])  
+            }
+            if (CatAddName=='hep-ex'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),6,0])  
+            }
+            if (CatAddName=='hep-lat'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),7,0])  
+            }
+            if (CatAddName=='hep-ph'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),8,0])  
+            }
+            if (CatAddName=='hep-th'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),9,0])  
+            }
+            if (CatAddName=='math'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),10,0])  
+            }
+            if (CatAddName=='other'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),11,0])  
+            }
+            if (CatAddName=='physics'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),12,0])  
+            }
+            if (CatAddName=='quant-ph'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),13,0])  
+            }
+            
+            let origin=data.FullData     
+            origin.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-1])
+            
+            setData(prevState => ({
+              ...prevState,
+              DATA: origin,
+            }))
+          }
+          else{console.log("Adding inlier Turned Off")
+          }    
+      })
+    console.log("INLIER Adding BUTTON_AddingPointsList :",AddingPointsList)
+    setaddNum(addNum+1)
 
-  svg
-    .on("click", function(event, d) {  
-      if (((addNum+1)%2===1)&&(deleteNum%2===0)){  
-          
-          AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),0])  
-          
-          let origin=data.FullData     
-          origin.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-1])
-          
-          setData(prevState => ({
-            ...prevState,
-            DATA: origin,
-          }))
-        }
-        else{console.log("Adding inlier Turned Off")
-        }    
-    })
-  console.log("INLIER Adding BUTTON_AddingPointsList :",AddingPointsList)
-  setaddNum(addNum+1)
+  }
+  else{
+    IsAdding=true;    
+  
+    if ((addNum+1)%2===1){  
+      setaddColor("red")}
+    else{setaddColor("black")}
+
+    svg
+      .on("click", function(event, d) {  
+        if (((addNum+1)%2===1)&&(deleteNum%2===0)){  
+            
+            AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),0])
+            
+            let origin=data.FullData     
+            origin.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-1])
+            
+            setData(prevState => ({
+              ...prevState,
+              DATA: origin,
+            }))
+          }
+          else{console.log("Adding inlier Turned Off")
+          }    
+      })
+    console.log("INLIER Adding BUTTON_AddingPointsList :",AddingPointsList)
+    setaddNum(addNum+1)
+  }
 }
 //adding points end
 
 
 //adding outlier points start
 const AddingPoints2=() => {
-  IsAdding2=true;    
-  
-  if ((addNum2+1)%2===1){  
-    setaddColor2("red")}
-  else{setaddColor2("black")}
+  if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
+    IsAdding2=true;    
+    
+    if ((addNum2+1)%2===1){  
+      setaddColor2("red")}
+    else{setaddColor2("black")}
 
-  svg
-    .on("click", function(event, d) {  
-      if (((addNum2+1)%2===1)&&(deleteNum%2===0)){  
-          
-          AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),1])  
-          
-          let origin2=data.FullData     
-          origin2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-2])
-          
-          setData(prevState => ({
-            ...prevState,
-            DATA: origin2,
-          }))
-        }
-
-        else{
-          
-          console.log("Adding outlier Turned Off")
-          
+    svg
+      .on("click", function(event, d) {  
+        if (((addNum2+1)%2===1)&&(deleteNum%2===0)){  
+            
+          if (CatAddName=='astro-ph'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),2,1])  
           }
-    })
-  console.log("OUTLIER Adding BUTTON_AddingPointsList2 :",AddingPointsList2)
-  setaddNum2(addNum2+1)
+          if (CatAddName=='cond-mat'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),3,1])  
+          }
+          if (CatAddName=='cs'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),4,1])  
+          }
+          if (CatAddName=='gr-qc'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),5,1])  
+          }
+          if (CatAddName=='hep-ex'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),6,1])  
+          }
+          if (CatAddName=='hep-lat'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),7,1])  
+          }
+          if (CatAddName=='hep-ph'){
+            AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),8,1])  
+          }
+          if (CatAddName=='hep-th'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),9,1])  
+          }
+          if (CatAddName=='math'){
+            AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),10,1])  
+          }
+          if (CatAddName=='other'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),11,1])  
+          }
+          if (CatAddName=='physics'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),12,1])  
+          }
+          if (CatAddName=='quant-ph'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),13,1])  
+          }  
+            
+            let origin2=data.FullData     
+            origin2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-2])
+            
+            setData(prevState => ({
+              ...prevState,
+              DATA: origin2,
+            }))
+          }
+
+          else{
+            
+            console.log("Adding outlier Turned Off")
+            
+            }
+      })
+    console.log("OUTLIER Adding BUTTON_AddingPointsList2 :",AddingPointsList2)
+    setaddNum2(addNum2+1)
+  }
+  else{
+      IsAdding2=true;    
+    
+    if ((addNum2+1)%2===1){  
+      setaddColor2("red")}
+    else{setaddColor2("black")}
+
+    svg
+      .on("click", function(event, d) {  
+        if (((addNum2+1)%2===1)&&(deleteNum%2===0)){  
+            
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),1])  
+            
+            let origin2=data.FullData     
+            origin2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-2])
+            
+            setData(prevState => ({
+              ...prevState,
+              DATA: origin2,
+            }))
+          }
+
+          else{
+            
+            console.log("Adding outlier Turned Off")
+            
+            }
+      })
+    console.log("OUTLIER Adding BUTTON_AddingPointsList2 :",AddingPointsList2)
+    setaddNum2(addNum2+1)
+  }
 }
 //adding points end
 
@@ -1167,17 +1290,15 @@ const AddingPoints2=() => {
     setdeleteColor("red")}
   else{setdeleteColor("black")}   
   
- // if (IsAdding===true){
- //   console.log("Adding is ON")
- //   IsDeleting=false;
- // }
+
   if ((deleteNum+1)%2===1){
     
     Dataval
     .on('click', function(){
       d3.select(this)
       DeletingPointsList.push([xSB(this.cx["baseVal"]["value"]),ySB(this.cy["baseVal"]["value"])])  
-      console.log("Deleting BUTTON_DeletingPointsList :",DeletingPointsList)
+      //console.log("Deleting BUTTON_DeletingPointsList :",DeletingPointsList)
+      
       d3.select(this).attr('opacity', 0);
     })
    
@@ -1193,7 +1314,10 @@ const outl = () => {
   console.log("outlier :",outlier)
   //myFunction2(outlier,data.out_indices);
 }
-
+const CatAdd = (value) => {
+  console.log(value);
+  setCatAddName(value)
+};
 
   return (
     <div style={{ margin: 10 ,width:"700",height:"600"}}>
@@ -1266,13 +1390,72 @@ const outl = () => {
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: 'black', marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={AreaLasso}>Area Selection</Button>
         <br></br>
         <br></br>
+        <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[ Adding Points on Category ]</p>     
+        <Select
+            defaultValue="astro-ph"
+            style={{
+              width: 110,fontSize: "13px",marginLeft: 10,marginRight: 10
+            }}
+            onChange={CatAdd}
+            options={[
+              {
+                value: 'astro-ph',
+                label: 'astro-ph',
+              },
+              {
+                value: 'cond-mat',
+                label: 'cond-mat',
+              },
+              {
+                value: 'cs',
+                label: 'cs',
+              },
+              {
+                value: 'gr-qc',
+                label: 'gr-qc',
+              },
+              {
+                value: 'hep-ex',
+                label: 'hep-ex',
+              },
+              {
+                value: 'hep-lat',
+                label: 'hep-lat',
+              },
+              {
+                value: 'hep-ph',
+                label: 'hep-ph',
+              },
+              {
+                value: 'hep-th',
+                label: 'hep-th',
+              },
+              {
+                value: 'math',
+                label: 'math',
+              },
+              {
+                value: 'other',
+                label: 'other',
+              },
+              {
+                value: 'physics',
+                label: 'physics',
+              },
+              {
+                value: 'quant-ph',
+                label: 'quant-ph',
+              },
+              
+            ]}
+          />
+        <br></br>
         <svg ref={svgRefL} />
-        
       </Sider>
       </Layout>
       
     </div>
   );
 };
- 
+
 export default App; 
