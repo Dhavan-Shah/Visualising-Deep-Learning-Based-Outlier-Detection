@@ -24,6 +24,7 @@ let outlier = [];
 let in_indicesList = [];
 let inlier=[];
 let InlierCat=[];
+let OutlierCat=[];
 
 let out_indicesList2 = [];
 let outlier2 = [];
@@ -46,7 +47,9 @@ let last_index = [];
 let clicks = 0
 
 let InitdataType='Binary Feature'
+let NewdataType='Binary Feature'; 
 let IsDataChanged=false
+let IsCAT=false;
 
 class SliderOk extends React.Component {
   constructor(props) {
@@ -101,20 +104,29 @@ class SliderOk extends React.Component {
     );
 
   };
-
+  
   dropdownChange=e=>{
+    //여기 바꿔야함 IsDataChange에 리스트 리셋되는거 조절
     console.log(e)
-    if (e!=InitdataType){IsDataChanged=true}
+    
+    if (e!=InitdataType){console.log("바뀜!!!");NewdataType=e;console.log(NewdataType,InitdataType)}
+    
     let dataType='Binary Feature'
     if (e==='arxiv_articles_UMAP.csv'){
       dataType='Category Feature'
     }
     else{dataType='Binary Feature'}
     this.setState({selectValue:e,CategoryType:dataType});
+
+    
   }
 
 // POST BUTTON
   handleClick()  {
+   
+
+
+
   //Timer  Start
     this.setState({timerBool:true}) 
     let timerNumber=0;
@@ -126,7 +138,7 @@ class SliderOk extends React.Component {
         this.setState({timerBool:false})
         timer.stop()}     
     }, 1000);
-//Timer End
+  //Timer End
 
     n_Post+=1
     let miscal; //val, dot incorection
@@ -165,7 +177,6 @@ class SliderOk extends React.Component {
         console.log("Deleting miscal4 :",miscal4) 
       } 
   }
-  
   miscal5 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
   if (IsAdding2===true){
     console.log("Outlier IsADDING2 ON")
@@ -173,11 +184,9 @@ class SliderOk extends React.Component {
       miscal5.push(AddingPointsList2[i])}
   }
   if (IsAdding===true){
-    console.log("Inlier:IsADDING ON")
-    
+    console.log("Inlier:IsADDING ON")   
     for (var i=0;i<AddingPointsList.length;i++) {
-      miscal5.push(AddingPointsList[i])}
-    
+      miscal5.push(AddingPointsList[i])}   
   }
   console.log("Total Adding: miscal5 :",miscal5) 
   
@@ -187,7 +196,8 @@ class SliderOk extends React.Component {
 
   if ((IsAreaLasso===true) && (IsDot===true)){
     //combining both
-    LassoData.push(val[0])
+    for (var n=0; n<val.length ; n++){LassoData.push(val[n])}
+    
     console.log("IsAreaLasso ON & IsDot ON")
     console.log("Both of lasso, dot",LassoData)
     miscal2 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
@@ -202,7 +212,8 @@ class SliderOk extends React.Component {
           // console.log("outlier->inlier");
             var x = outlier[j][0];
             var y = outlier[j][1];
-            miscal2.push([x,y,0,out_indicesList[j]]);
+            if (IsCAT){miscal2.push([x,y,0,out_indicesList[j],OutlierCat[j]])}
+            else{miscal2.push([x,y,0,out_indicesList[j]]);}
           }
         }
         //inlier->outlier
@@ -214,7 +225,8 @@ class SliderOk extends React.Component {
           // console.log("inlier->outlier");
             var x = inlier[j][0];
             var y = inlier[j][1];
-            miscal2.push([x,y,1,in_indicesList[j]]);
+            if (IsCAT){miscal2.push([x,y,1,in_indicesList[j],InlierCat[j]]);}
+            else{miscal2.push([x,y,1,in_indicesList[j]]);}     
           }
         } 
       console.log("Both incorrection : miscal2 :",miscal2) 
@@ -237,7 +249,9 @@ class SliderOk extends React.Component {
           // console.log("outlier->inlier");
             var x = outlier[j][0];
             var y = outlier[j][1];
-            miscal3.push([x,y,0,out_indicesList[j]]);
+            
+            if (IsCAT){miscal3.push([x,y,0,out_indicesList[j],OutlierCat[j]])}
+            else{miscal3.push([x,y,0,out_indicesList[j]]);}
           }
         }
         //inlier->outlier
@@ -249,7 +263,8 @@ class SliderOk extends React.Component {
           // console.log("inlier->outlier");
             var x = inlier[j][0];
             var y = inlier[j][1];
-            miscal3.push([x,y,1,in_indicesList[j]]);
+            if (IsCAT){miscal3.push([x,y,1,in_indicesList[j],InlierCat[j]]);}
+            else{miscal3.push([x,y,1,in_indicesList[j]]);}
           }
         } 
       console.log("Area incorrection :miscal3 :",miscal3) 
@@ -260,23 +275,20 @@ class SliderOk extends React.Component {
   //Lasso end
 
   if ((IsAreaLasso===false) && (IsDot===true)){
-  //point selection
-  console.log("only dot ON")
+      //point selection
+      console.log("only dot ON")
       var z = val.length;
-    //  console.log("val:",val)
       miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
-    //  console.log("X --------- X ---------- Y -------------- Y")
       for(var i=0;i<z;i++)
       {
         for(var j=0;j<outlier.length;j++)
         {
-
           if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
           {
-        //    console.log("Yessss");
             var x = outlier[j][0];
             var y = outlier[j][1];
-            miscal.push([x,y,0,out_indicesList[j]]);
+            if (IsCAT){miscal.push([x,y,0,out_indicesList[j],OutlierCat[j]])}
+            else{miscal.push([x,y,0,out_indicesList[j]]);}
           }
         }
         //inlier->outlier
@@ -287,14 +299,16 @@ class SliderOk extends React.Component {
           {
             var x = inlier[j][0];
             var y = inlier[j][1];
-            miscal.push([x,y,1,in_indicesList[j]]);
+            if (IsCAT){miscal.push([x,y,1,in_indicesList[j],InlierCat[j]]);}
+            else{miscal.push([x,y,1,in_indicesList[j]]);}
+            
           }
         }
       }
       Totalmiscal=miscal
       console.log("Dot incorrection: miscal:",miscal)
     }
-    // console.log("TESTING INPUTS");
+    //Slider inputs
       clicks += 1;
       if(last_index.length == 0)
       { 
@@ -307,12 +321,18 @@ class SliderOk extends React.Component {
       // console.log(temp, last_index[temp - 1]);
         last_index.push( Number(last_index[temp-1]) + Number(this.state.value3));
       }
-
-      
-      if (IsDataChanged){
+      console.log("NewdataType:",NewdataType)
+      console.log("InitdataType:",InitdataType) 
+      if (NewdataType!=InitdataType){
+        if (NewdataType=='arxiv_articles_UMAP.csv'){IsCAT=true;}
+        else{IsCAT=false}
+        
+        console.log("라스트인덱스 초기화")
         last_index=[]
         last_index.push(Number(this.state.value3));
+        InitdataType=NewdataType;
       }
+       
 
       var Threshold = this.state.value2;
     // console.log(Threshold);  
@@ -441,7 +461,7 @@ const App = () => {
   const [checkedList, setCheckedList] = useState(defaultCheckedList);
   const [indeterminate, setIndeterminate] = useState(true);
   const [checkAll, setCheckAll] = useState(false);
-  const [data, setData] = useState({inlierCat:"",colorData:"",FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
+  const [data, setData] = useState({outlierCat:"",inlierCat:"",colorData:"",FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
   const [historydata, sethistoryData] = useState({FullData:""})
   
   const [incorrectNum, setincorrectNum] = useState(0);
@@ -452,7 +472,7 @@ const App = () => {
   const [addColor, setaddColor] = useState("black");
   const [addNum2, setaddNum2] = useState(0);
   const [addColor2, setaddColor2] = useState("black");
-  const [CatAddName,setCatAddName]=useState("");
+  const [CatAddName,setCatAddName]=useState("astro-ph");
 
   const svgRef = useRef();
   const [width, setWidth] = useState(0);
@@ -485,10 +505,14 @@ const App = () => {
       const color_list=res.data.color_list;
       let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
       let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
+      let outlierCat=color_list.filter((_, ind) => out_indices.includes(ind));
       let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
       let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
       let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
+      
       console.log("inlierCat:",inlierCat)
+      console.log("outlierCat:",outlierCat)
+
       setData(prevState => ({
         ...prevState,
         FullData:  res.data.FullData,
@@ -497,7 +521,8 @@ const App = () => {
         out_indices:out_indices,
         Inlier :Inlier,
         in_indices:in_indices,
-        inlierCat:inlierCat
+        inlierCat:inlierCat,
+        outlierCat:outlierCat
       }))
     })
     }	
@@ -546,6 +571,7 @@ const App = () => {
         const color_list=res.data.color_list;
         let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
+        let outlierCat=color_list.filter((_, ind) => out_indices.includes(ind));
         let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
         let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
@@ -559,7 +585,8 @@ const App = () => {
         out_indices:out_indices,
         Inlier :Inlier,
         in_indices:in_indices,
-        inlierCat:inlierCat
+        inlierCat:inlierCat,
+        outlierCat:outlierCat
       }))
     })
 
@@ -603,6 +630,106 @@ const App = () => {
 
   //MAIN PLOT START
   let svg = d3.select(svgRef.current).attr("width", w).attr("height", h)
+
+  //concnetric circlcle Start
+  let svg4 = d3.select(svgRef4.current).attr("width", 800).attr("height",150);
+
+  function funcsvg(arr)
+  {
+    console.log("Entered funcsvg");
+    console.log(arr);
+    var gsvg = svg4.append('g');
+    var glin = svg4.append('g');
+    var lindat = [];
+    var dataLevel = [];
+    //y = 10, 140
+    //x = 120, 220
+    var x = 300;
+    var x_1 = [];
+    //var x_2 = [];
+    for(var i=0; i<11; i++) 
+    {
+      if(i<arr.length)
+      {
+        x_1.push((i*100)/(arr.length) + x);
+        if(arr[i][2] == 0)
+        {
+          dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
+          lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
+          console.log("Green Execution");
+        }
+        else
+        {
+          dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 140]);
+          lindat.push([(i*100)/(arr.length) + x, 140, "red"]);
+          console.log("Red Execution");
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+    var li = [];
+    for(var k=0; k<lindat.length-1;k++)
+    {
+      li.push([lindat[k][0], lindat[k][1], lindat[k+1][0], lindat[k+1][1], lindat[k+1][2]]);
+    }
+    
+    console.log(li);
+    console.log(dataLevel);
+    dataLevel.reverse();
+    console.log(dataLevel);
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", 100)
+      .attr("cy", 80)
+      .attr("r", function(d){return d[0];})
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    glin.selectAll('circle')
+      .data(x_1)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d})
+      .attr("x2",function(d){return d})
+      .attr("y1", 10)
+      .attr("y2", 140)
+      .style("stroke", "black")
+      .style("stroke-width", 5);
+
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d){return d[2];})
+      .attr("cy", function(d){return d[3];})
+      .attr("r", 2)
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    glin.selectAll('circle')
+      .data(li)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d[0];})
+      .attr("x2",function(d){return d[2];})
+      .attr("y1",function(d){return d[1];})
+      .attr("y2",function(d){return d[3];})
+      .style("stroke",function(d){return d[4];})
+      .style("stroke-width", 3);
+    
+  }
+
+
+
+
+  //concnetric circlcle End
 
   //Binary : inlier(0)=green, outlier(1)=red, adding point(-1)=purple
   
@@ -708,6 +835,8 @@ svgL.selectAll("text")
         .data(data.DATA)
         .join('circle')
             .attr('opacity', 0.75);
+  
+  
   //DotClick
   const DotClick=() => {
     IsDot=true;
@@ -719,30 +848,125 @@ svgL.selectAll("text")
   //  console.log("data.DATA:",data.DATA)
     if ((incorrectNum+1)%2===1){
       setincorrectNum(incorrectNum+1)
-       Dataval
-      .on('click', function(){
-        d3.select(this)
-        //console.log("Enter::");
-        //console.log(this);
-        const xval = this.cx["baseVal"]["value"];
-        const xvalue = xSB(xval);
-        const yval = this.cy["baseVal"]["value"];
-        const yvalue = ySB(yval);
-        var temp = Array(2);
-        temp = [xvalue,yvalue];
-        //console.log(temp);
-        val.push(temp);
-    
-        d3.select(this).attr('fill','yellow');
-        
-    //  console.log(val);
-      //myFunction(val);
-    //  console.log("Exit Onclick");
+      Dataval
+      .on('mouseover', function(){
+       
+       d3.select(this).attr('stroke', '#333').attr('stroke-width', 2).attr(data.DATA);
+       console.log("DATA:", data.DATA);
 
-      })
-    }
-  }
-// Add brushing
+       console.log("-----------------HISTORY DATA---------------");
+       console.log(history);
+       console.log("---------------------------------------------");
+       
+       d3.select(this);
+       const xval = this.cx["baseVal"]["value"];
+       const yval = this.cy["baseVal"]["value"];
+       const xvalue = xSB(xval);
+       const yvalue = ySB(yval);
+       var temp = Array(2);
+       temp = [xvalue,yvalue];
+       console.log(temp);  
+       console.log(history);
+       var hisarr = [];
+       var ind = -100;
+       for(var i=0; i<history[history.length- 1].length; i++)
+       {
+         if(Math.abs(xvalue-history[history.length-1][i][0])< 0.0001 && Math.abs(yvalue - history[history.length-1][i][0]))
+         {
+           console.log("Match Found Hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+           ind = i;
+           break;
+         } 
+       }
+       for(var j=history.length-1; j>-1;j--)
+       {
+         if(history[j].length>= ind)
+         {
+           hisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
+         }
+         else
+         {
+           break;
+         }
+       }
+     //  console.log(hisarr);
+       hisarr.reverse();
+      // console.log(hisarr);
+       funcsvg(hisarr);
+
+     })
+     .on('click', function(){
+       d3.select(this).attr('stroke', '#000').attr('stroke-width', 4);
+       console.log("Enter::");
+      // console.log(this);
+       const xval = this.cx["baseVal"]["value"];
+       const xvalue = xSB(xval);
+       const yval = this.cy["baseVal"]["value"];
+       const yvalue = ySB(yval);
+       var temp = Array(2);
+       temp = [xvalue,yvalue];
+     //  console.log(temp);
+       val.push(temp);
+     //  console.log("val :",val);
+    
+     //  console.log("xvalue:",xvalue);
+     //  console.log("yvalue : ",yvalue);
+     //  console.log(" xval, yval");
+       if (d3.select(this).attr('fill')=='purple')
+       {
+         console.log("HEREEEEEEEEE");
+         for(var j=0;j<data.Outlier.length;j++)
+         {
+           console.log(xvalue, data.Outlier[j][0],Math.abs(xvalue-data.Outlier[j][0]),"---", yvalue, data.Outlier[j][1],Math.abs(yvalue-data.Outlier[j][1]));
+           if(Math.abs(xvalue-data.Outlier[j][0]) < 0.0001 && Math.abs(yvalue-data.Outlier[j][1]) < 0.0001)
+           {
+             console.log("----------------HEREEEEEEEEE--------------");
+             d3.select(this).attr('fill','red');
+             d3.select(this).attr('opacity', 0.5);
+             break;
+           } 
+           else
+           { 
+             d3.select(this).attr('fill','green');
+             d3.select(this).attr('opacity', 0.5);
+           }
+         }
+         console.log(val[val.length -1]);
+         for(var i=0;i<val.length - 1;i++)
+         {
+
+           if(val[val.length - 1][0] == val[i][0] && val[val.length - 1][1] == val[i][1])
+           {
+             console.log("Match Found");
+             console.log(val[i]);
+             console.log(val, i);
+             console.log("del val[i]")
+             val.splice(i,1);
+             i = val.length -1;
+             val.splice(i,1);
+             console.log(val);
+             console.log(val.length);
+
+           }
+         }
+       }
+       else
+       {
+         d3.select(this).attr('fill','purple');
+         d3.select(this).attr('opacity', 1.0);
+       }
+     console.log(val);
+     //myFunction(val);
+     console.log("Exit Onclick");
+
+     })
+     .on('mouseout', function(){
+       d3.select(this).attr('stroke', null);
+       //var gsvg = svg4.append('g');
+       svg4.selectAll("*").remove();
+     }) 
+   }
+ }
 
 
 //Area Lasso Start
@@ -930,6 +1154,7 @@ const AreaLasso=() => {
         const color_list=res.data.color_list;
         let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
+        let outlierCat=color_list.filter((_, ind) => out_indices.includes(ind));
         let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
         outlier=Outlier; 
@@ -939,7 +1164,8 @@ const AreaLasso=() => {
         let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
         InlierCat=inlierCat
         console.log("inlierCat:",inlierCat)
-
+        OutlierCat=outlierCat
+        console.log("outlierCat:",outlierCat)
 
       setData(prevState => ({
         ...prevState,
@@ -952,7 +1178,8 @@ const AreaLasso=() => {
         out_indices:out_indices,
         Inlier :Inlier,
         in_indices:in_indices,
-        inlierCat:inlierCat
+        inlierCat:inlierCat,
+        outlierCat:outlierCat
      }))
   })
    }
@@ -1356,9 +1583,14 @@ const CatAdd = (value) => {
         <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
           <svg id="chart" ref={svgRef} />
         </Layout>
+        <br></br>
+        <br></br>
+        <Layout style={{backgroundColor: "white"}}>
+          <svg ref = {svgRef4} />
+        </Layout>
         
         </Layout>
-      <Sider width={"135"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
+      <Sider width={"145"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
        <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[  Tool Tips  ]</p>        
        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginRight: 10,marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
           Process 
@@ -1399,12 +1631,12 @@ const CatAdd = (value) => {
           Dot Selection</Button>
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: 'black', marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={AreaLasso}>Area Selection</Button>
         <br></br>
-        <br></br>
-        <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[ Adding Points on Category ]</p>     
+       
+        <p style={{fontWeight:'bold',fontSize: "13px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[ Category Options ]</p>     
         <Select
             defaultValue="astro-ph"
             style={{
-              width: 110,fontSize: "13px",marginLeft: 10,marginRight: 10
+              width: 110,fontSize: "11px",marginLeft: 10,marginRight: 10
             }}
             onChange={CatAdd}
             options={[
@@ -1459,6 +1691,7 @@ const CatAdd = (value) => {
               
             ]}
           />
+        <br></br>
         <br></br>
         <svg ref={svgRefL} />
       </Sider>
