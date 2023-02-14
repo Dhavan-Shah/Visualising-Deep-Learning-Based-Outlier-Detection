@@ -56,7 +56,7 @@ class SliderOk extends React.Component {
     this.state = {
       value1: 3,
       value2: 0.5,
-      value3:10 ,
+      value3:100 ,
       selectValue:'HR_diagram.csv',
       CategoryType:'Binary Feature',
       timerBool:false  
@@ -166,7 +166,7 @@ class SliderOk extends React.Component {
         console.log("Deleting miscal4 :",miscal4) 
       } 
   }
-  miscal5 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+  miscal5 = [[-1, -1, -1],[-1, -1, -1]]; 
   if (IsAdding2===true){
     console.log("Outlier IsADDING2 ON")
     for (var i=0;i<AddingPointsList2.length;i++) {
@@ -612,7 +612,178 @@ const App = () => {
 
 
   //MAIN PLOT START
-  let svg = d3.select(svgRef.current).attr("width", w).attr("height", h)
+  let svg = d3.select(svgRef.current).attr("width", w).attr("height", h);
+  let svg4 = d3.select(svgRef4.current).attr("width", 800).attr("height",150);
+
+
+
+  function funcline(arr)
+  {
+    console.log("Entered funcline");
+    console.log(arr);
+    var glin = svg4.append('g');
+    var lindat = [];
+    //var dataLevel = [];
+    //y = 10, 110
+    //x = 120, 220
+    var x = 300;
+    var x_1 = [];
+    //var x_2 = [];
+    for(var i=0; i<11; i++) 
+    {
+      if(i<arr.length)
+      {
+        x_1.push((i*100)/(arr.length) + x);
+        if(arr[i][2] == 0)
+        {
+          //dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
+          lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
+          console.log("Green Execution");
+        }
+        else
+        {
+          //dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 140]);
+          lindat.push([(i*100)/(arr.length) + x, 110, "red"]);
+          console.log("Red Execution");
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+    var li = [];
+    for(var k=0; k<lindat.length-1;k++)
+    {
+      li.push([lindat[k][0], lindat[k][1], lindat[k+1][0], lindat[k+1][1], lindat[k+1][2]]);
+      console.log("x1 : ", lindat[k][0], " y1 : ", lindat[k][1], " x2 : ",lindat[k+1][0], " y2 : ", lindat[k+1][1], " color :", lindat[k+1][2]);
+    }
+
+
+    glin.selectAll('circle')
+      .data(x_1)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d})
+      .attr("x2",function(d){return d})
+      .attr("y1", 10)
+      .attr("y2", 110)
+      .style("stroke", "black")
+      .style("stroke-width", 5);
+
+    glin.selectAll('circle')
+      .data(li)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d[0];})
+      .attr("x2",function(d){return d[2];})
+      .attr("y1",function(d){return d[1];})
+      .attr("y2",function(d){return d[3];})
+      .style("stroke",function(d){return d[4];})
+      .style("stroke-width", 3);
+
+  }
+
+  function funcsvg(arr)
+  {
+    console.log("Entered funcsvg");
+    console.log(arr);
+    var gsvg = svg4.append('g');
+    var glin = svg4.append('g');
+    var lindat = [];
+    var dataLevel = [];
+    //y = 10, 140
+    //x = 120, 220
+    var x = 300;
+    var x_1 = [];
+    //var x_2 = [];
+    for(var i=0; i<11; i++) 
+    {
+      if(i<arr.length)
+      {
+        x_1.push((i*100)/(arr.length) + x);
+        if(arr[i][2] == 0)
+        {
+          dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
+          //lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
+          console.log("Green Execution");
+        }
+        else
+        {
+          dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 110]);
+          //lindat.push([(i*100)/(arr.length) + x, 140, "red"]);
+          console.log("Red Execution");
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+    /*var li = [];
+    for(var k=0; k<lindat.length-1;k++)
+    {
+      li.push([lindat[k][0], lindat[k][1], lindat[k+1][0], lindat[k+1][1], lindat[k+1][2]]);
+    }
+    
+    console.log(li);*/
+    console.log(dataLevel);
+    dataLevel.reverse();
+    console.log(dataLevel);
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", 100)
+      .attr("cy", 60)
+      .attr("r", function(d){return d[0];})
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+    
+    /*
+
+    glin.selectAll('circle')
+      .data(x_1)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d})
+      .attr("x2",function(d){return d})
+      .attr("y1", 10)
+      .attr("y2", 140)
+      .style("stroke", "black")
+      .style("stroke-width", 5); */
+
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d){return d[2];})
+      .attr("cy", function(d){return d[3];})
+      .attr("r", 2)
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    /*
+    glin.selectAll('circle')
+      .data(li)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d[0];})
+      .attr("x2",function(d){return d[2];})
+      .attr("y1",function(d){return d[1];})
+      .attr("y2",function(d){return d[3];})
+      .style("stroke",function(d){return d[4];})
+      .style("stroke-width", 3);
+    */
+    
+  }
+
+
+
+
+
 
   //Binary : inlier(0)=green, outlier(1)=red, adding point(-1)=purple
   
@@ -731,26 +902,124 @@ svgL.selectAll("text")
   //  console.log("data.DATA:",data.DATA)
     if ((incorrectNum+1)%2===1){
       setincorrectNum(incorrectNum+1)
-       Dataval
+      Dataval
+       .on('mouseover', function(){
+        const data = data
+        d3.select(this).attr('stroke', '#333').attr('stroke-width', 2).attr(data);
+        //console.log("DATA:", data);
+
+        console.log("-----------------HISTORY DATA---------------");
+       // console.log(history);
+        console.log("---------------------------------------------");
+        
+        d3.select(this);
+        const xval = this.cx["baseVal"]["value"];
+        const yval = this.cy["baseVal"]["value"];
+        const xvalue = xSB(xval);
+        const yvalue = ySB(yval);
+        var temp = Array(2);
+        temp = [xvalue,yvalue];
+        console.log(temp);
+        console.log(history);
+        var hisarr = [];
+        var ind = -100;
+        for(var i=0; i<history[history.length- 1].length; i++)
+        {
+          if(Math.abs(xvalue-history[history.length-1][i][0])< 0.0001 && Math.abs(yvalue - history[history.length-1][i][0]))
+          {
+            console.log("Match Found Hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+            ind = i;
+            break;
+          } 
+        }
+        for(var j=history.length-1; j>-1;j--)
+        {
+          if(history[j].length>= ind)
+          {
+            hisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
+          }
+          else
+          {
+            break;
+          }
+        }
+      //  console.log(hisarr);
+        hisarr.reverse();
+       // console.log(hisarr);
+        funcsvg(hisarr);
+        funcline(hisarr);
+ 
+      })
       .on('click', function(){
-        d3.select(this)
-        //console.log("Enter::");
-        //console.log(this);
+        d3.select(this).attr('stroke', '#000').attr('stroke-width', 4);
+        console.log("Enter::");
+       // console.log(this);
         const xval = this.cx["baseVal"]["value"];
         const xvalue = xSB(xval);
         const yval = this.cy["baseVal"]["value"];
         const yvalue = ySB(yval);
         var temp = Array(2);
         temp = [xvalue,yvalue];
-        //console.log(temp);
+      //  console.log(temp);
         val.push(temp);
-        d3.select(this).attr('fill','yellow');
-        
-       console.log("닷클릭 겟",val);
+      //  console.log("val :",val);
+     
+      //  console.log("xvalue:",xvalue);
+      //  console.log("yvalue : ",yvalue);
+      //  console.log(" xval, yval");
+        if (d3.select(this).attr('fill')=='purple')
+        {
+          console.log("HEREEEEEEEEE");
+          for(var j=0;j<data.Outlier.length;j++)
+          {
+            console.log(xvalue, data.Outlier[j][0],Math.abs(xvalue-data.Outlier[j][0]),"---", yvalue, data.Outlier[j][1],Math.abs(yvalue-data.Outlier[j][1]));
+            if(Math.abs(xvalue-data.Outlier[j][0]) < 0.0001 && Math.abs(yvalue-data.Outlier[j][1]) < 0.0001)
+            {
+              console.log("----------------HEREEEEEEEEE--------------");
+              d3.select(this).attr('fill','red');
+              d3.select(this).attr('opacity', 0.5);
+              break; 
+            } 
+            else
+            { 
+              d3.select(this).attr('fill','green');
+              d3.select(this).attr('opacity', 0.5);
+            }
+          }
+          console.log(val[val.length -1]);
+          for(var i=0;i<val.length - 1;i++)
+          {
+
+            if(val[val.length - 1][0] == val[i][0] && val[val.length - 1][1] == val[i][1])
+            {
+              console.log("Match Found");
+              console.log(val[i]);
+              console.log(val, i);
+              console.log("del val[i]")
+              val.splice(i,1);
+              i = val.length -1;
+              val.splice(i,1);
+              console.log(val);
+              console.log(val.length);
+
+            }
+          }
+        }
+        else
+        {
+          d3.select(this).attr('fill','purple');
+          d3.select(this).attr('opacity', 1.0);
+        }
+      console.log(val);
       //myFunction(val);
-    //  console.log("Exit Onclick");
+      console.log("Exit Onclick");
 
       })
+      .on('mouseout', function(){
+        d3.select(this).attr('stroke', null);
+        //var gsvg = svg4.append('g');
+        svg4.selectAll("*").remove();
+      }) 
     }
   }
 // Add brushing
@@ -1369,6 +1638,11 @@ const CatAdd = (value) => {
           </Content>
         <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
           <svg id="chart" ref={svgRef} />
+        </Layout>
+        <br></br>
+        <br></br>
+        <Layout style={{backgroundColor: "white"}}>
+          <svg ref = {svgRef4} />
         </Layout>
         
         </Layout>
