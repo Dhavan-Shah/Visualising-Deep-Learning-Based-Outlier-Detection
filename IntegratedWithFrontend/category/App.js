@@ -5,9 +5,6 @@ import axios from 'axios';
 import { Select,Button ,Layout,Divider,Checkbox, Drawer,Spin} from 'antd';
 
 import * as d3 from 'd3';
-
-
-
 import "./App.css"
 
 var qs = require('qs');
@@ -26,7 +23,8 @@ let out_indicesList = [];
 let outlier = [];
 let in_indicesList = [];
 let inlier=[];
-
+let InlierCat=[];
+let OutlierCat=[];
 
 let out_indicesList2 = [];
 let outlier2 = [];
@@ -45,10 +43,13 @@ let history=[];
 
 let n_Post=-1 
 let sliderindexList=[]
-var last_index = [];
+let last_index = [];
 let clicks = 0
 
- 
+let InitdataType='Binary Feature'
+let NewdataType='Binary Feature'; 
+let IsDataChanged=false
+let IsCAT=false;
 
 class SliderOk extends React.Component {
   constructor(props) {
@@ -57,7 +58,7 @@ class SliderOk extends React.Component {
     this.state = {
       value1: 3,
       value2: 0.5,
-      value3:1 ,
+      value3:100 , 
       selectValue:'HR_diagram.csv',
       CategoryType:'Binary Feature',
       timerBool:false  
@@ -103,19 +104,29 @@ class SliderOk extends React.Component {
     );
 
   };
-
+  
   dropdownChange=e=>{
+    //여기 바꿔야함 IsDataChange에 리스트 리셋되는거 조절
     console.log(e)
-    let dataType='binary Feature'
+    
+    if (e!=InitdataType){console.log("바뀜!!!");NewdataType=e;console.log(NewdataType,InitdataType)}
+    
+    let dataType='Binary Feature'
     if (e==='arxiv_articles_UMAP.csv'){
       dataType='Category Feature'
     }
     else{dataType='Binary Feature'}
     this.setState({selectValue:e,CategoryType:dataType});
+
+    
   }
 
 // POST BUTTON
   handleClick()  {
+   
+
+
+
   //Timer  Start
     this.setState({timerBool:true}) 
     let timerNumber=0;
@@ -127,7 +138,7 @@ class SliderOk extends React.Component {
         this.setState({timerBool:false})
         timer.stop()}     
     }, 1000);
-//Timer End
+  //Timer End
 
     n_Post+=1
     let miscal; //val, dot incorection
@@ -138,10 +149,12 @@ class SliderOk extends React.Component {
     let Totalmiscal;
     //Deleting points to (0,0)
     console.log( "IsDeleting :",IsDeleting ,"IsAdding:",IsAdding,"IsAdding2:",IsAdding2,"IsAreaLasso:",IsAreaLasso,"IsDot:",IsDot)
+    //TODO: for category, oulier and inlier lists are needed
     if (IsDeleting){
+      
       console.log("IsDeleting ON")
       miscal4 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
-
+      console.log("POST delete:",DeletingPointsList)
       for(var i=0;i<DeletingPointsList.length;i++)  
       {
         //outlier
@@ -149,7 +162,7 @@ class SliderOk extends React.Component {
         {
             if(Math.abs(DeletingPointsList[i][0]-outlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-outlier[j][1]) < 0.0001)
           {
-            miscal4.push([0,0,0,out_indicesList[j]]);
+            miscal4.push([0,0,1,out_indicesList[j]]);
           }
         }
         //inlier
@@ -158,28 +171,24 @@ class SliderOk extends React.Component {
 
           if(Math.abs(DeletingPointsList[i][0]-inlier[j][0]) < 0.0001 && Math.abs(DeletingPointsList[i][1]-inlier[j][1]) < 0.0001)
           { 
-            miscal4.push([0,0,1,in_indicesList[j]]);
+            miscal4.push([0,0,InlierCat[j],in_indicesList[j]]);
           }
         }
         console.log("Deleting miscal4 :",miscal4) 
       } 
   }
-  
-  miscal5 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+  miscal5 = [[-1, -1, -1],[-1, -1, -1]]; 
   if (IsAdding2===true){
-    console.log("IsADDING2 ON")
+    console.log("Outlier IsADDING2 ON")
     for (var i=0;i<AddingPointsList2.length;i++) {
       miscal5.push(AddingPointsList2[i])}
-
   }
   if (IsAdding===true){
-    console.log("IsADDING ON")
-    
+    console.log("Inlier:IsADDING ON")   
     for (var i=0;i<AddingPointsList.length;i++) {
-      miscal5.push(AddingPointsList[i])}
-    
+      miscal5.push(AddingPointsList[i])}   
   }
-  console.log("Adding: miscal5 :",miscal5) 
+  console.log("Total Adding: miscal5 :",miscal5) 
   
 
 
@@ -187,7 +196,8 @@ class SliderOk extends React.Component {
 
   if ((IsAreaLasso===true) && (IsDot===true)){
     //combining both
-    LassoData.push(val[0])
+    for (var n=0; n<val.length ; n++){LassoData.push(val[n])}
+    
     console.log("IsAreaLasso ON & IsDot ON")
     console.log("Both of lasso, dot",LassoData)
     miscal2 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
@@ -202,7 +212,8 @@ class SliderOk extends React.Component {
           // console.log("outlier->inlier");
             var x = outlier[j][0];
             var y = outlier[j][1];
-            miscal2.push([x,y,0,out_indicesList[j]]);
+            if (IsCAT){miscal2.push([x,y,0,out_indicesList[j],OutlierCat[j]])}
+            else{miscal2.push([x,y,0,out_indicesList[j]]);}
           }
         }
         //inlier->outlier
@@ -214,7 +225,8 @@ class SliderOk extends React.Component {
           // console.log("inlier->outlier");
             var x = inlier[j][0];
             var y = inlier[j][1];
-            miscal2.push([x,y,1,in_indicesList[j]]);
+            if (IsCAT){miscal2.push([x,y,1,in_indicesList[j],InlierCat[j]]);}
+            else{miscal2.push([x,y,1,in_indicesList[j]]);}     
           }
         } 
       console.log("Both incorrection : miscal2 :",miscal2) 
@@ -237,7 +249,9 @@ class SliderOk extends React.Component {
           // console.log("outlier->inlier");
             var x = outlier[j][0];
             var y = outlier[j][1];
-            miscal3.push([x,y,0,out_indicesList[j]]);
+            
+            if (IsCAT){miscal3.push([x,y,0,out_indicesList[j],OutlierCat[j]])}
+            else{miscal3.push([x,y,0,out_indicesList[j]]);}
           }
         }
         //inlier->outlier
@@ -249,7 +263,8 @@ class SliderOk extends React.Component {
           // console.log("inlier->outlier");
             var x = inlier[j][0];
             var y = inlier[j][1];
-            miscal3.push([x,y,1,in_indicesList[j]]);
+            if (IsCAT){miscal3.push([x,y,1,in_indicesList[j],InlierCat[j]]);}
+            else{miscal3.push([x,y,1,in_indicesList[j]]);}
           }
         } 
       console.log("Area incorrection :miscal3 :",miscal3) 
@@ -260,25 +275,23 @@ class SliderOk extends React.Component {
   //Lasso end
 
   if ((IsAreaLasso===false) && (IsDot===true)){
-  //point selection
-  console.log("only dot ON")
+      //point selection
+      console.log("only dot ON")
       var z = val.length;
-    //  console.log("val:",val)
       miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
-    //  console.log("X --------- X ---------- Y -------------- Y")
       for(var i=0;i<z;i++)
       {
         for(var j=0;j<outlier.length;j++)
         {
-
           if(Math.abs(val[i][0]-outlier[j][0]) < 0.0001 && Math.abs(val[i][1]-outlier[j][1]) < 0.0001)
           {
-        //    console.log("Yessss");
             var x = outlier[j][0];
             var y = outlier[j][1];
-            miscal.push([x,y,0,out_indicesList[j]]);
+            if (IsCAT){miscal.push([x,y,0,out_indicesList[j],OutlierCat[j]])}
+            else{miscal.push([x,y,0,out_indicesList[j]]);}
           }
         }
+        //inlier->outlier
         for(var j=0;j<inlier.length;j++)
         {
 
@@ -286,14 +299,16 @@ class SliderOk extends React.Component {
           {
             var x = inlier[j][0];
             var y = inlier[j][1];
-            miscal.push([x,y,1,in_indicesList[j]]);
+            if (IsCAT){miscal.push([x,y,1,in_indicesList[j],InlierCat[j]]);}
+            else{miscal.push([x,y,1,in_indicesList[j]]);}
+            
           }
         }
       }
       Totalmiscal=miscal
       console.log("Dot incorrection: miscal:",miscal)
     }
-    // console.log("TESTING INPUTS");
+    //Slider inputs
       clicks += 1;
       if(last_index.length == 0)
       { 
@@ -306,10 +321,22 @@ class SliderOk extends React.Component {
       // console.log(temp, last_index[temp - 1]);
         last_index.push( Number(last_index[temp-1]) + Number(this.state.value3));
       }
+      console.log("NewdataType:",NewdataType)
+      console.log("InitdataType:",InitdataType) 
+      if (NewdataType!=InitdataType){
+        if (NewdataType=='arxiv_articles_UMAP.csv'){IsCAT=true;}
+        else{IsCAT=false}
+        
+        console.log("라스트인덱스 초기화")
+        last_index=[]
+        last_index.push(Number(this.state.value3));
+        InitdataType=NewdataType;
+      }
+       
 
       var Threshold = this.state.value2;
-    // console.log(Threshold);
-
+    // console.log(Threshold);  
+ 
       if(Threshold == "Comparitive Value")
       {
         Threshold = 0;
@@ -318,7 +345,7 @@ class SliderOk extends React.Component {
       {
         Threshold = this.state.value2; 
       }
-     
+      
       const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
 
       let data = qs.stringify(newdata)
@@ -419,48 +446,6 @@ class SliderOk extends React.Component {
   } 
 }
 
-//var NumProgress=[];
-
-function myFunction(val) { 
-  var table = document.getElementById("demo");
-
-    table.innerHTML = "";
-    if(val.length>0)
-    {
-      for(var i=0;i<val.length;i++)
-      {
-        var row = table.insertRow(i);
-        var cell1 = row.insertCell(0);
-        var cell2 = row.insertCell(1);
-        cell1.innerHTML = val[i][0];
-        cell2.innerHTML = val[i][1];
-      }
-    }
-    rowno += 1;
-    console.log(rowno);
-
-}
-
-
-function myFunction2(val, index) {
-  var table = document.getElementById("outlier");
-  var j=0;
-  for(j;j<index.length;j++)
-  {
-    var row = table.insertRow(j);
-    var cell1 = row.insertCell(0);
-    var cell2 = row.insertCell(1);
-    var cell3 = row.insertCell(2);
-    cell1.innerHTML = index[j];
-    cell2.innerHTML = val[j][0];
-    cell3.innerHTML = val[j][1];
-  }
-}
-
-/* function TotalFunction(Total,NumberofData) {
-  document.getElementById("Totaldemo").innerHTML = "Progress : "+(Total/NumberofData*100).toFixed(2);
-  }
- */
 
 const { Sider, Content} = Layout;
 
@@ -476,7 +461,7 @@ const App = () => {
   const [checkedList, setCheckedList] = useState(defaultCheckedList);
   const [indeterminate, setIndeterminate] = useState(true);
   const [checkAll, setCheckAll] = useState(false);
-  const [data, setData] = useState({FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
+  const [data, setData] = useState({outlierCat:"",inlierCat:"",colorData:"",FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
   const [historydata, sethistoryData] = useState({FullData:""})
   
   const [incorrectNum, setincorrectNum] = useState(0);
@@ -487,7 +472,7 @@ const App = () => {
   const [addColor, setaddColor] = useState("black");
   const [addNum2, setaddNum2] = useState(0);
   const [addColor2, setaddColor2] = useState("black");
-  
+  const [CatAddName,setCatAddName]=useState("astro-ph");
 
   const svgRef = useRef();
   const [width, setWidth] = useState(0);
@@ -500,7 +485,7 @@ const App = () => {
   const svgRef2 = useRef();
   const svgRef3 = useRef();
   const svgRef4 = useRef();
-  const svgRefL = useRef();
+  const svgRefL = useRef(); 
   const [sliderdata, slidersetData] = useState({sliderFullData:""})
 
  
@@ -520,8 +505,13 @@ const App = () => {
       const color_list=res.data.color_list;
       let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
       let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
-      let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
+      let outlierCat=color_list.filter((_, ind) => out_indices.includes(ind));
+      let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
       let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
+      let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
+      
+      console.log("inlierCat:",inlierCat)
+      console.log("outlierCat:",outlierCat)
 
       setData(prevState => ({
         ...prevState,
@@ -530,7 +520,9 @@ const App = () => {
         Outlier :Outlier,
         out_indices:out_indices,
         Inlier :Inlier,
-        in_indices:in_indices
+        in_indices:in_indices,
+        inlierCat:inlierCat,
+        outlierCat:outlierCat
       }))
     })
     }	
@@ -548,7 +540,7 @@ const App = () => {
     }	
     else if( list.includes("Inlier")) {
 
-      let in_indices1 = data.FullData.map((c,i)=>c[2]===0?i:'').filter(String);
+      let in_indices1 = data.FullData.map((c,i)=>c[2]!=1?i:'').filter(String);
       console.log( in_indices1)
 
       let inlier1 =data.FullData.filter((_, ind) => in_indices1.includes(ind));
@@ -558,7 +550,7 @@ const App = () => {
         FullData: inlier1,
       }))
     }	
-    else{
+    else{ 
 
     setData(prevState => ({
       ...prevState,
@@ -570,59 +562,304 @@ const App = () => {
     setCheckedList(e.target.checked ? plainOptions : []);
     setIndeterminate(false);
     setCheckAll(e.target.checked);
-
+ 
     if (e.target.checked){
 
       axios.get('http://localhost:5000/BackendData')
       .then(res => {
-        const DATA = res.data.XYData;
+        const DATA = res.data.XYData; 
         const color_list=res.data.color_list;
         let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
-        let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
+        let outlierCat=color_list.filter((_, ind) => out_indices.includes(ind));
+        let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
-
+        let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
+        console.log("inlierCat:",inlierCat)
 
       setData(prevState => ({
         ...prevState,
         FullData:  res.data.FullData,
         DATA:DATA,
-        Outlier :Outlier,
+        Outlier :Outlier, 
         out_indices:out_indices,
         Inlier :Inlier,
         in_indices:in_indices,
+        inlierCat:inlierCat,
+        outlierCat:outlierCat
       }))
     })
 
     }
   };
 
+  let MinX;
+  let MaxX;
+  let MinY;
+  let MaxY;
+  let w;
+  let h; 
+  
+  if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
+    MinX=-13;
+    MaxX=10;
+    MinY=-13;
+    MaxY=14;
+    w=700 ;
+    h=500;
+  }
+  else{
+    MinX=-1;
+    MaxX=5;
+    MinY=-3;
+    MaxY=17;
+    w=800;
+    h=450;
+  }
 
-  const w=800;
-  const h=450;
 
   const xScale = d3.scaleLinear()
-        .domain([0, 5])
+        .domain([MinX, MaxX])
         .range([0,w]);
 
       // y axis scale 
   const yScale = d3.scaleLinear()
-      .domain([0,16])
-      .range([h,0])
+      .domain([MinY,MaxY]) 
+      .range([h,0])   
 
 
   //MAIN PLOT START
   let svg = d3.select(svgRef.current).attr("width", w).attr("height", h)
 
+  //concnetric circlcle Start
+  let svg4 = d3.select(svgRef4.current).attr("width", 800).attr("height",150);
+
+  function funcline(arr)
+  {
+    console.log("Entered funcline");
+    console.log(arr);
+    var glin = svg4.append('g');
+    var lindat = [];
+    //var dataLevel = [];
+    //y = 10, 110
+    //x = 120, 220
+    var x = 300;
+    var x_1 = [];
+    //var x_2 = [];
+    for(var i=0; i<11; i++) 
+    {
+      if(i<arr.length)
+      {
+        x_1.push((i*100)/(arr.length) + x);
+        if(arr[i][2] == 0)
+        {
+          //dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
+          lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
+          console.log("Green Execution");
+        }
+        else
+        {
+          //dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 140]);
+          lindat.push([(i*100)/(arr.length) + x, 110, "red"]);
+          console.log("Red Execution");
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+    var li = [];
+    for(var k=0; k<lindat.length-1;k++)
+    {
+      li.push([lindat[k][0], lindat[k][1], lindat[k+1][0], lindat[k+1][1], lindat[k+1][2]]);
+      console.log("x1 : ", lindat[k][0], " y1 : ", lindat[k][1], " x2 : ",lindat[k+1][0], " y2 : ", lindat[k+1][1], " color :", lindat[k+1][2]);
+    }
+
+
+    glin.selectAll('circle')
+      .data(x_1)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d})
+      .attr("x2",function(d){return d})
+      .attr("y1", 10)
+      .attr("y2", 110)
+      .style("stroke", "black")
+      .style("stroke-width", 5);
+
+    glin.selectAll('circle')
+      .data(li)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d[0];})
+      .attr("x2",function(d){return d[2];})
+      .attr("y1",function(d){return d[1];})
+      .attr("y2",function(d){return d[3];})
+      .style("stroke",function(d){return d[4];})
+      .style("stroke-width", 3);
+
+  }
+
+  function funcsvg(arr)
+  {
+    console.log("Entered funcsvg");
+    console.log(arr);
+    var gsvg = svg4.append('g');
+    var glin = svg4.append('g');
+    var lindat = [];
+    var dataLevel = [];
+    //y = 10, 140
+    //x = 120, 220
+    var x = 300;
+    var x_1 = [];
+    //var x_2 = [];
+    for(var i=0; i<11; i++) 
+    {
+      if(i<arr.length)
+      {
+        x_1.push((i*100)/(arr.length) + x);
+        if(arr[i][2] == 0)
+        {
+          dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
+          //lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
+          console.log("Green Execution");
+        }
+        else
+        {
+          dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 110]);
+          //lindat.push([(i*100)/(arr.length) + x, 140, "red"]);
+          console.log("Red Execution");
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+    /*var li = [];
+    for(var k=0; k<lindat.length-1;k++)
+    {
+      li.push([lindat[k][0], lindat[k][1], lindat[k+1][0], lindat[k+1][1], lindat[k+1][2]]);
+    }
+    
+    console.log(li);*/
+    console.log(dataLevel);
+    dataLevel.reverse();
+    console.log(dataLevel);
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", 100)
+      .attr("cy", 60)
+      .attr("r", function(d){return d[0];})
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+    
+    /*
+
+    glin.selectAll('circle')
+      .data(x_1)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d})
+      .attr("x2",function(d){return d})
+      .attr("y1", 10)
+      .attr("y2", 140)
+      .style("stroke", "black")
+      .style("stroke-width", 5); */
+
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d){return d[2];})
+      .attr("cy", function(d){return d[3];})
+      .attr("r", 2)
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    /*
+    glin.selectAll('circle')
+      .data(li)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d[0];})
+      .attr("x2",function(d){return d[2];})
+      .attr("y1",function(d){return d[1];})
+      .attr("y2",function(d){return d[3];})
+      .style("stroke",function(d){return d[4];})
+      .style("stroke-width", 3);
+    */
+    
+  }
+
+
+
+
+  //concnetric circlcle End
+
   //Binary : inlier(0)=green, outlier(1)=red, adding point(-1)=purple
   
   //category option2: inlier(2~13)=each color, outlier(1)=red, adding inlier point(-1), adding outlier(-2)####
   var C=d3.scaleOrdinal()
-  .domain(["0", "1", "-1","-2","2","3","4","5","6","7","8","9","10","11","12","13"])
-  .range([ "green","red","#4ECCA3","#F70776","Lumber","Aero,'Honeydew","blanced Almond","Blizzard Blue","Ash Gray","Timberwolf","Isabelline","Laurel Green","mint"])
+  .domain(["0", "1", "-1","-2","-3","2","3","4","5","6","7","8","9","10","11","12","13"])
+  //.range([ "green","red","#16FF00","#FF9551","#DFD3C3","#ECC5FB,'#F2D388","#C1EFFF","#E4D192","#D3CEDF","#92A9BD","yellow","#42032C","#93C6E7"])
+  .range([ "green","red","#16FF00","#FF9551","yellow","blue","navy,'purple","brown","#CCD6A6","pink","violet","#FAF7F0","#CDF0EA","#93C6E7","#4C8492","#ECF9FF","#E5BA73"])
   
+  //LABEL
+  let colorLabelName=d3.scaleOrdinal()
+  .domain(["0", "1", "-1","-2","-3","2","3","4","5","6","7","8","9","10","11","12","13"])
+  .range([ "inlier","outlier","added inlier","added outlier","misclassification",'astro-ph' ,'cond-mat', 'cs' ,'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th', 'math', 'other' ,'physics' ,'quant-ph'])
+  
+  //label enter
+  let svgL = d3.select(svgRefL.current).attr("width", w).attr("height", h)
+  var legend = svgL.selectAll(".legend")
+    .data(data.colorData)
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
 
+  legend.append("rect")
+    .attr("x",  13)
+    .attr("width", 8)
+    .attr("height", 8)
+    .style("fill",d=> C(d.toString()));
 
+  legend.append("text")
+    .attr("x",  30)
+    .attr("y", 4)
+    .attr("dy", ".35em")
+    .style("text-anchor", "start")
+    .text(function(d) { return colorLabelName(d.toString()); });
+
+//label exit
+svgL.selectAll('rect')
+.data(data.colorData).exit().remove();
+svgL.selectAll('text')
+.data(data.colorData).exit().remove();
+
+//label update
+svgL.selectAll("rect")
+.data(data.colorData)
+  .transition()
+    .attr("x",  13)
+    .attr("width", 8)
+    .attr("height", 8)
+    .style("fill",d=> C(d.toString()));
+svgL.selectAll("text")
+.data(data.colorData)
+  .transition()
+    .attr("x",  30)
+    .attr("y", 4)
+    .attr("dy", ".35em")
+    .style("text-anchor", "start")
+    .text(function(d) { return colorLabelName(d.toString()); }); 
+
+//MAIN PLOT
   //enter
   //console.log("data.FullData:",data.FullData)
   svg.selectAll('circle')
@@ -634,6 +871,7 @@ const App = () => {
     .attr('r',2)
     .attr('fill',d=>C(d[2].toString())) 
     .attr('opacity',"0.65");
+    
 
   //exit
   svg.selectAll('circle')
@@ -653,12 +891,12 @@ const App = () => {
   //x ScaleBack
   const xSB = d3.scaleLinear()
   .domain([0,w])
-  .range([0,5])
+  .range([MinX,MaxX])
 
   //y ScaleBack
   const ySB = d3.scaleLinear()
     .domain([h, 0])
-    .range([0,16])
+    .range([MinY,MaxY])
 
   //storing values in array 
   //console.log("val :",val);
@@ -668,6 +906,8 @@ const App = () => {
         .data(data.DATA)
         .join('circle')
             .attr('opacity', 0.75);
+  
+  
   //DotClick
   const DotClick=() => {
     IsDot=true;
@@ -679,30 +919,126 @@ const App = () => {
   //  console.log("data.DATA:",data.DATA)
     if ((incorrectNum+1)%2===1){
       setincorrectNum(incorrectNum+1)
-       Dataval
-      .on('click', function(){
-        d3.select(this)
-        //console.log("Enter::");
-        //console.log(this);
-        const xval = this.cx["baseVal"]["value"];
-        const xvalue = xSB(xval);
-        const yval = this.cy["baseVal"]["value"];
-        const yvalue = ySB(yval);
-        var temp = Array(2);
-        temp = [xvalue,yvalue];
-        //console.log(temp);
-        val.push(temp);
-    
-        d3.select(this).attr('fill','yellow');
-        
-    //  console.log(val);
-      myFunction(val);
-    //  console.log("Exit Onclick");
+      Dataval
+      .on('mouseover', function(){
+       
+       d3.select(this).attr('stroke', '#333').attr('stroke-width', 2).attr(data.DATA);
+       console.log("DATA:", data.DATA);
 
-      })
-    }
-  }
-// Add brushing
+       console.log("-----------------HISTORY DATA---------------");
+       console.log(history);
+       console.log("---------------------------------------------");
+       
+       d3.select(this);
+       const xval = this.cx["baseVal"]["value"];
+       const yval = this.cy["baseVal"]["value"];
+       const xvalue = xSB(xval);
+       const yvalue = ySB(yval);
+       var temp = Array(2);
+       temp = [xvalue,yvalue];
+       console.log(temp);  
+       console.log(history);
+       var hisarr = [];
+       var ind = -100;
+       for(var i=0; i<history[history.length- 1].length; i++)
+       {
+         if(Math.abs(xvalue-history[history.length-1][i][0])< 0.0001 && Math.abs(yvalue - history[history.length-1][i][0]))
+         {
+           console.log("Match Found Hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+           ind = i;
+           break;
+         } 
+       }
+       for(var j=history.length-1; j>-1;j--)
+       {
+         if(history[j].length>= ind)
+         {
+           hisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
+         }
+         else
+         { 
+           break;
+         }
+       }
+     //  console.log(hisarr);
+       hisarr.reverse();
+      // console.log(hisarr);
+       funcsvg(hisarr);
+       funcline(hisarr);
+
+     })
+     .on('click', function(){
+       d3.select(this).attr('stroke', '#000').attr('stroke-width', 4);
+       console.log("Enter::");
+      // console.log(this);
+       const xval = this.cx["baseVal"]["value"];
+       const xvalue = xSB(xval);
+       const yval = this.cy["baseVal"]["value"];
+       const yvalue = ySB(yval);
+       var temp = Array(2);
+       temp = [xvalue,yvalue];
+     //  console.log(temp);
+       val.push(temp);
+     //  console.log("val :",val);
+    
+     //  console.log("xvalue:",xvalue);
+     //  console.log("yvalue : ",yvalue);
+     //  console.log(" xval, yval");
+       if (d3.select(this).attr('fill')=='purple')
+       {
+         console.log("HEREEEEEEEEE");
+         for(var j=0;j<data.Outlier.length;j++)
+         {
+           console.log(xvalue, data.Outlier[j][0],Math.abs(xvalue-data.Outlier[j][0]),"---", yvalue, data.Outlier[j][1],Math.abs(yvalue-data.Outlier[j][1]));
+           if(Math.abs(xvalue-data.Outlier[j][0]) < 0.0001 && Math.abs(yvalue-data.Outlier[j][1]) < 0.0001)
+           {
+             console.log("----------------HEREEEEEEEEE--------------");
+             d3.select(this).attr('fill','red');
+             d3.select(this).attr('opacity', 0.5);
+             break;
+           } 
+           else
+           { 
+             d3.select(this).attr('fill','green');
+             d3.select(this).attr('opacity', 0.5);
+           }
+         }
+         console.log(val[val.length -1]);
+         for(var i=0;i<val.length - 1;i++)
+         {
+
+           if(val[val.length - 1][0] == val[i][0] && val[val.length - 1][1] == val[i][1])
+           {
+             console.log("Match Found");
+             console.log(val[i]);
+             console.log(val, i);
+             console.log("del val[i]")
+             val.splice(i,1);
+             i = val.length -1;
+             val.splice(i,1);
+             console.log(val);
+             console.log(val.length);
+
+           }
+         }
+       }
+       else
+       {
+         d3.select(this).attr('fill','purple');
+         d3.select(this).attr('opacity', 1.0);
+       }
+     console.log(val);
+     //myFunction(val);
+     console.log("Exit Onclick");
+
+     })
+     .on('mouseout', function(){
+       d3.select(this).attr('stroke', null);
+       //var gsvg = svg4.append('g');
+       svg4.selectAll("*").remove();
+     }) 
+   }
+ }
 
 
 //Area Lasso Start
@@ -753,8 +1089,7 @@ const AreaLasso=() => {
 
     function drawPath() {
         d3.select("#lasso")
-            .style("stroke", "black")
-            .style("stroke-width", 1)
+            
             .style("fill", "#00000054")
             .attr("d", lineGenerator(coords));
     }
@@ -780,7 +1115,7 @@ const AreaLasso=() => {
         lassocircles.each((d, i) => {
             let point = [ xScale(d[0]),yScale(d[1])];
             if (pointInPolygon(point, coords)) {
-                d3.select("#dot-" + d[3]).attr("fill", "grey");
+                d3.select("#dot-" + d[3]).attr("fill", "yellow");
                 
                 selectedDots.push(d[3]);
                 LassoData.push([d[0],d[1]])
@@ -858,7 +1193,7 @@ const AreaLasso=() => {
     setaddColor2('black')
   
     val = [];
-    myFunction(val) // have to be deleted
+    //myFunction(val) // have to be deleted
     val2=[];
     LassoData=[];
     //
@@ -868,9 +1203,21 @@ const AreaLasso=() => {
     //myFunction2(val, index)
     axios.get('http://localhost:5000/BackendData')
     .then(res => {
-        //divide data into variables
+        //divide data into variables 
+        const FileName=res.data.FileName;
+        let ColorData;
+        if (FileName[0]==='arxiv_articles_UMAP.csv'){
+          ColorData=[[-1],[-2],[-3],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[1]]
+        }
+        else{
+          ColorData=[[0],[1],[-1],[-2],[-3]]
+        }
+      console.log("ColorData:",ColorData.length,ColorData)
+      
         const FullDATA = res.data.FullData;
-        
+        console.log("FullDATA:",FullDATA.length,FullDATA)
+
+
         history.push(FullDATA)
         const DATA = res.data.XYData;
         const last_index = res.data.last_index;
@@ -879,17 +1226,23 @@ const AreaLasso=() => {
         const color_list=res.data.color_list;
         let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
         let Outlier = DATA.filter((_, ind) => out_indices.includes(ind));
-        let in_indices = color_list.map((c,i)=>c===0?i:'').filter(String);
+        let outlierCat=color_list.filter((_, ind) => out_indices.includes(ind));
+        let in_indices = color_list.map((c,i)=>c!=1?i:'').filter(String);
         let Inlier=DATA.filter((_, ind) => in_indices.includes(ind));
         outlier=Outlier; 
         inlier=Inlier;
         out_indicesList=out_indices;
         in_indicesList=in_indices;
-
-
+        let inlierCat=color_list.filter((_, ind) => in_indices.includes(ind));
+        InlierCat=inlierCat
+        console.log("inlierCat:",inlierCat)
+        OutlierCat=outlierCat
+        console.log("outlierCat:",outlierCat)
 
       setData(prevState => ({
         ...prevState,
+        colorData:ColorData,
+        FileName:FileName,
         FullData: FullDATA,
         DATA : DATA,
         last_index:last_index,
@@ -897,6 +1250,8 @@ const AreaLasso=() => {
         out_indices:out_indices,
         Inlier :Inlier,
         in_indices:in_indices,
+        inlierCat:inlierCat,
+        outlierCat:outlierCat
      }))
   })
    }
@@ -1036,69 +1391,202 @@ const [draweropen2, setdrawerOpen2] = useState(false);
 //drawer end
  
 
-
+//let cat_list=['astro-ph' ,'cond-mat', 'cs' ,'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th', 'math', 'other' ,'physics' ,'quant-ph']
 //adding inlier points start
 const AddingPoints=() => {
-  IsAdding=true;    
- 
-  if ((addNum+1)%2===1){  
-    setaddColor("red")}
-  else{setaddColor("black")}
+  if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
+    
+    IsAdding=true;    
+  
+    if ((addNum+1)%2===1){  
+      setaddColor("red")}
+    else{setaddColor("black")}
+    
+    svg
+      .on("click", function(event, d) {  
+        if (((addNum+1)%2===1)&&(deleteNum%2===0)){  
+            if (CatAddName=='astro-ph'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),2,0])  
+            }
+            if (CatAddName=='cond-mat'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),3,0])  
+            }
+            if (CatAddName=='cs'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),4,0])  
+            }
+            if (CatAddName=='gr-qc'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),5,0])  
+            }
+            if (CatAddName=='hep-ex'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),6,0])  
+            }
+            if (CatAddName=='hep-lat'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),7,0])  
+            }
+            if (CatAddName=='hep-ph'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),8,0])  
+            }
+            if (CatAddName=='hep-th'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),9,0])  
+            }
+            if (CatAddName=='math'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),10,0])  
+            }
+            if (CatAddName=='other'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),11,0])  
+            }
+            if (CatAddName=='physics'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),12,0])  
+            }
+            if (CatAddName=='quant-ph'){
+              AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),13,0])  
+            }
+            
+            let origin=data.FullData     
+            origin.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-1])
+            
+            setData(prevState => ({
+              ...prevState,
+              DATA: origin,
+            }))
+          }
+          else{console.log("Adding inlier Turned Off")
+          }    
+      })
+    console.log("INLIER Adding BUTTON_AddingPointsList :",AddingPointsList)
+    setaddNum(addNum+1)
 
-  svg
-    .on("click", function(event, d) {  
-      if (((addNum+1)%2===1)&&(deleteNum%2===0)){  
-          
-          AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),0])  
-          
-          let origin=data.FullData     
-          origin.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-1])
-          
-          setData(prevState => ({
-            ...prevState,
-            DATA: origin,
-          }))
-        }
-        else{console.log("Adding inlier Turned Off")
-        }    
-    })
-  console.log("INLIER Adding BUTTON_AddingPointsList :",AddingPointsList)
-  setaddNum(addNum+1)
+  }
+  else{
+    IsAdding=true;    
+  
+    if ((addNum+1)%2===1){  
+      setaddColor("red")}
+    else{setaddColor("black")}
+
+    svg
+      .on("click", function(event, d) {  
+        if (((addNum+1)%2===1)&&(deleteNum%2===0)){  
+            
+            AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),0])
+            
+            let origin=data.FullData     
+            origin.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-1])
+            
+            setData(prevState => ({
+              ...prevState,
+              DATA: origin,
+            }))
+          }
+          else{console.log("Adding inlier Turned Off")
+          }    
+      })
+    console.log("INLIER Adding BUTTON_AddingPointsList :",AddingPointsList)
+    setaddNum(addNum+1)
+  }
 }
 //adding points end
 
 
 //adding outlier points start
 const AddingPoints2=() => {
-  IsAdding2=true;    
-  
-  if ((addNum2+1)%2===1){  
-    setaddColor2("red")}
-  else{setaddColor2("black")}
+  if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
+    IsAdding2=true;    
+    
+    if ((addNum2+1)%2===1){  
+      setaddColor2("red")}
+    else{setaddColor2("black")}
 
-  svg
-    .on("click", function(event, d) {  
-      if (((addNum2+1)%2===1)&&(deleteNum%2===0)){  
-          
-          AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),1])  
-          
-          let origin2=data.FullData     
-          origin2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-2])
-          
-          setData(prevState => ({
-            ...prevState,
-            DATA: origin2,
-          }))
-        }
-
-        else{
-          
-          console.log("Adding outlier Turned Off")
-          
+    svg
+      .on("click", function(event, d) {  
+        if (((addNum2+1)%2===1)&&(deleteNum%2===0)){  
+            
+          if (CatAddName=='astro-ph'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),2,1])  
           }
-    })
-  console.log("OUTLIER Adding BUTTON_AddingPointsList2 :",AddingPointsList2)
-  setaddNum2(addNum2+1)
+          if (CatAddName=='cond-mat'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),3,1])  
+          }
+          if (CatAddName=='cs'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),4,1])  
+          }
+          if (CatAddName=='gr-qc'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),5,1])  
+          }
+          if (CatAddName=='hep-ex'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),6,1])  
+          }
+          if (CatAddName=='hep-lat'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),7,1])  
+          }
+          if (CatAddName=='hep-ph'){
+            AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),8,1])  
+          }
+          if (CatAddName=='hep-th'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),9,1])  
+          }
+          if (CatAddName=='math'){
+            AddingPointsList.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),10,1])  
+          }
+          if (CatAddName=='other'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),11,1])  
+          }
+          if (CatAddName=='physics'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),12,1])  
+          }
+          if (CatAddName=='quant-ph'){
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),13,1])  
+          }  
+            
+            let origin2=data.FullData     
+            origin2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-2])
+            
+            setData(prevState => ({
+              ...prevState,
+              DATA: origin2,
+            }))
+          }
+
+          else{
+            
+            console.log("Adding outlier Turned Off")
+            
+            }
+      })
+    console.log("OUTLIER Adding BUTTON_AddingPointsList2 :",AddingPointsList2)
+    setaddNum2(addNum2+1)
+  }
+  else{
+      IsAdding2=true;    
+    
+    if ((addNum2+1)%2===1){  
+      setaddColor2("red")}
+    else{setaddColor2("black")}
+
+    svg
+      .on("click", function(event, d) {  
+        if (((addNum2+1)%2===1)&&(deleteNum%2===0)){  
+            
+            AddingPointsList2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),1])  
+            
+            let origin2=data.FullData     
+            origin2.push([xSB(d3.pointer(event)[0]),ySB(d3.pointer(event)[1]),-2])
+            
+            setData(prevState => ({
+              ...prevState,
+              DATA: origin2,
+            }))
+          }
+
+          else{
+            
+            console.log("Adding outlier Turned Off")
+            
+            }
+      })
+    console.log("OUTLIER Adding BUTTON_AddingPointsList2 :",AddingPointsList2)
+    setaddNum2(addNum2+1)
+  }
 }
 //adding points end
 
@@ -1110,17 +1598,16 @@ const AddingPoints2=() => {
     setdeleteColor("red")}
   else{setdeleteColor("black")}   
   
- // if (IsAdding===true){
- //   console.log("Adding is ON")
- //   IsDeleting=false;
- // }
+
   if ((deleteNum+1)%2===1){
     
     Dataval
     .on('click', function(){
       d3.select(this)
+      
       DeletingPointsList.push([xSB(this.cx["baseVal"]["value"]),ySB(this.cy["baseVal"]["value"])])  
-      console.log("Deleting BUTTON_DeletingPointsList :",DeletingPointsList)
+      //console.log("Deleting BUTTON_DeletingPointsList :",DeletingPointsList)
+      
       d3.select(this).attr('opacity', 0);
     })
    
@@ -1134,32 +1621,30 @@ const AddingPoints2=() => {
 const outl = () => {
   console.log("new button :data.out_indices",data.out_indices)
   console.log("outlier :",outlier)
-  myFunction2(outlier,data.out_indices);
+  //myFunction2(outlier,data.out_indices);
 }
-
+const CatAdd = (value) => {
+  console.log(value);
+  setCatAddName(value)
+};
 
   return (
-    <div style={{ margin: 10 ,width:"95%",height:"90%"}}>
+    <div style={{ margin: 10 ,width:"700",height:"600"}}>
 
-      <Layout style={{ height:  "70%", backgroundColor:'white',borderColor: "black" }}>
-        <Sider width={ "350"} style={{backgroundColor:'OldLace',marginLeft: 40,marginRight: 50}}>  
+      <Layout style={{  backgroundColor:'white',borderColor: "black" }}>
+        <Sider width={ "350"}  style={{height: 600,backgroundColor:'OldLace',marginLeft: 10,marginRight: 20}}>  
           <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 30,marginRight: 30}}>Outlier Detection and Monitoring<br></br> for Streaming data</p>
               <Content style={{ height:  "100%"}}>
               <Divider />
 
                 <SliderOk/> 
 
-                <Button size="small" shape="round" style={{ width:"200px",fontSize: "13px",color: "white", marginLeft: 30,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={SethandleClick}>Updating on Plot</Button>
-
-                <Divider/>
-                <p style={{fontSize: "14px",color: "DimGrey",marginLeft: 30}}>Incorrect Classification</p>
-                    <table style ={{fontSize: "8px",marginLeft: 30}}id="demo"></table>   
-                
+                <Button size="small" shape="round" style={{ width:"200px",fontSize: "13px",color: "white", marginLeft: 30,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={SethandleClick}>Updating on Plot</Button>   
                 
                 </Content>
         </Sider>
-        <Layout style={{ marginTop:5,marginLeft:20,backgroundColor:'White'}}>
-            <Content style={{ width: "100%" ,display: "flex", verticalAlign:"middle"}}  >
+        <Layout style={{height: 600, marginTop:5,marginLeft:20,backgroundColor:'White'}}>
+            <Content style={{ width: 500}}  >
               <div className="container">
               <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll} >
                     Check All</Checkbox>
@@ -1167,12 +1652,17 @@ const outl = () => {
             </div>
             
           </Content>
-        <Layout style={{backgroundColor:'White'}}>
+        <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
           <svg id="chart" ref={svgRef} />
+        </Layout>
+        <br></br>
+        <br></br>
+        <Layout style={{backgroundColor: "white"}}>
+          <svg ref = {svgRef4} />
         </Layout>
         
         </Layout>
-      <Sider width={"135"} height={"5"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
+      <Sider width={"145"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
        <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[  Tool Tips  ]</p>        
        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginRight: 10,marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
           Process 
@@ -1212,13 +1702,75 @@ const outl = () => {
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: incorrectColor, marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={DotClick}>
           Dot Selection</Button>
         <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: 'black', marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={AreaLasso}>Area Selection</Button>
-        
-        
+        <br></br>
+       
+        <p style={{fontWeight:'bold',fontSize: "13px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[ Category Options ]</p>     
+        <Select
+            defaultValue="astro-ph"
+            style={{
+              width: 110,fontSize: "11px",marginLeft: 10,marginRight: 10
+            }}
+            onChange={CatAdd}
+            options={[
+              {
+                value: 'astro-ph',
+                label: 'astro-ph',
+              },
+              {
+                value: 'cond-mat',
+                label: 'cond-mat',
+              },
+              {
+                value: 'cs',
+                label: 'cs',
+              },
+              {
+                value: 'gr-qc',
+                label: 'gr-qc',
+              },
+              {
+                value: 'hep-ex',
+                label: 'hep-ex',
+              },
+              {
+                value: 'hep-lat',
+                label: 'hep-lat',
+              },
+              {
+                value: 'hep-ph',
+                label: 'hep-ph',
+              },
+              {
+                value: 'hep-th',
+                label: 'hep-th',
+              },
+              {
+                value: 'math',
+                label: 'math',
+              },
+              {
+                value: 'other',
+                label: 'other',
+              },
+              {
+                value: 'physics',
+                label: 'physics',
+              },
+              {
+                value: 'quant-ph',
+                label: 'quant-ph',
+              },
+              
+            ]}
+          />
+        <br></br>
+        <br></br>
+        <svg ref={svgRefL} />
       </Sider>
       </Layout>
       
     </div>
   );
 };
- 
-export default App; 
+
+export default App;
