@@ -1431,15 +1431,15 @@ const AreaLasso=() => {
    
     console.log("click :",clicks)
     console.log("history :",history)
-    console.log("history[event.target.value-1]",history[event.target.value-1]);
+    console.log("history[event.target.value-1]",history[(event.target.value)* 1-1]);
     let FullData=[[]];
-    if (Number(event.target.value)!=0){
-      FullData= history[event.target.value-1]
+    if ((event.target.value)* 1!=0){
+      FullData= history[(event.target.value)* 1-1]
       setsliderText1(event.target.value);
     }
-    if (Number(event.target.value)==0){
-      console.log("Default")
-      FullData= [[]]
+    if ((event.target.value)* 1==0){
+      console.log("Default") 
+      FullData= ''
       setsliderText1("Default");
     }
      //console.log("FullData:",FullData)
