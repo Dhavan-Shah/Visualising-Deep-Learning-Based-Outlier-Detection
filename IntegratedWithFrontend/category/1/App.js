@@ -53,7 +53,7 @@ let IsCAT=false;
 
 let GlobalNumFrame=3;
 let HeatMapData=[];
-
+let GlobalNbatch=100;
 
 class SliderOk extends React.Component {
   constructor(props) {
@@ -105,6 +105,7 @@ class SliderOk extends React.Component {
       () => {
         var SliderValue=this.state.value3   
         console.log("Slider value: ",SliderValue);
+        GlobalNbatch=this.state.value3  
       }     
     );
 
@@ -1267,7 +1268,7 @@ const AreaLasso=() => {
 //Slider PLOT START
   const svg2 = d3.select(svgRef2.current).attr("width", w).attr("height", h);
 
-  //console.log("sliderdata.sliderFullData :",sliderdata.sliderFullData)
+  console.log("그려지나sliderdata.sliderFullData :",sliderdata.sliderFullData)
   svg2.selectAll('circle')
   .data(sliderdata.sliderFullData)
   .enter()
@@ -1380,56 +1381,49 @@ const AreaLasso=() => {
 
   const changeWidth = (event) => {
     setWidth(event.target.value);
-
-    axios.get('http://localhost:5000/BackendData')
-    .then(res => {
-        //divide data into variables
-        const sliderFullDATA = res.data.FullData;
-        const last_index = res.data.last_index;
-        const Nbatch=Number(res.data.Nbatch);
-        console.log("sliderFullDATA SIZE :",sliderFullDATA.length)  
-        console.log("clicks:",clicks)
-        console.log("Nbatch :",Nbatch)
-
-        sliderindexList=last_index[0].slice(1)
-        sliderindexList.push(sliderFullDATA.length)
-      console.log("sliderindexList :",sliderindexList)
-      console.log("event.target.value :",event.target.value)
-
+    console.log("event.target.value",event.target.value)
+    
+    const sliderFullDATA = history.slice(-1)[0];
+            
+    console.log("sliderFullDATA SIZE :",sliderFullDATA)  
+    console.log("clicks:",clicks)
+    console.log("GlobalNumFrame :",GlobalNumFrame)
+    
       let startTrain=0;
-      setsliderText(`${clicks} testing batch < ${Nbatch} Frames (${Nbatch-clicks} batch needed more)`)
-      setsliderInd(clicks)
-      setsliderText2(`${clicks} Frames: ${event.target.value} out of ${clicks} `)
-      if (Number(event.target.value)===0){
-        setsliderText("")
-        setsliderText2(`${Nbatch} Frames: `)
-        slidersetData(prevState => ({
-          ...prevState,
-          sliderFullData: [[]]
-       }))}
-      else{
-        if (clicks>=Nbatch){   
-          startTrain=sliderindexList[sliderindexList.length-Nbatch-1];
-          console.log("startTrain:",startTrain)
-          setsliderInd(Nbatch+1)
+      let endTrain=0;
+        if ((clicks)>GlobalNumFrame){   
+          
+          startTrain=last_index[last_index.length-GlobalNumFrame-1];
+          endTrain=last_index[last_index.length-GlobalNumFrame-1+(event.target.value)* 1 ];
+          
+          setsliderInd(GlobalNumFrame+1)
           setsliderText("")
-          setsliderText2(`${Nbatch} Frames: ${event.target.value-1} out of ${Nbatch} batches`)
-          console.log("event.target.value :",event.target.value)
-          console.log("sliderindexList.length-Nbatch-1 :",sliderindexList.length-Nbatch-1)
-          console.log("sliderindexList.length-Nbatch-1+event.target.value :",sliderindexList.length-Nbatch-1+Number(event.target.value))
-          console.log("sliderindexList[sliderindexList.length - 1] :",sliderindexList[sliderindexList.length - 1])
-          if (Number(event.target.value)===1){
-            setsliderText("Default")
-          }
-
+          setsliderText2(`${GlobalNumFrame} Frames: ${(event.target.value)* 1 + 1} out of ${GlobalNumFrame}`)
+          slidersetData(prevState => ({
+            ...prevState,
+            sliderFullData: sliderFullDATA.slice(startTrain,endTrain),
+  
+        }))
+            
         }
+        else{
+        
+          const sliderindexList=[...last_index]
+          sliderindexList.unshift(0)
+          console.log("last_index :",last_index)
+          console.log("sliderindexList :",sliderindexList)
+          setsliderText(`${clicks} testing frame < ${GlobalNumFrame} Frames (${GlobalNumFrame-clicks} needed more)`)
+          setsliderInd(clicks)
+          setsliderText2(`${clicks} Frames: ${(event.target.value)* 1 + 1} out of ${clicks} `)
+         
+    
           slidersetData(prevState => ({
           ...prevState,
-          sliderFullData: sliderFullDATA.slice(startTrain,sliderindexList[sliderindexList.length-Nbatch-1+Number(event.target.value)]),
+          sliderFullData: sliderFullDATA.slice(0,sliderindexList[(event.target.value)* 1+1]),
 
       }))
-  }})
-
+  
+    }
   };
 
   const changeWidth1 = (event) => {
@@ -1796,7 +1790,7 @@ const CatAdd = (value) => {
             <h4>{sliderText} </h4>
           <div className="slidecontainer">
           <input type='range'  className="slider" id="myRange" onChange={changeWidth}
-            min={0} max={sliderInd} step={1} value={width} ></input>
+            min={0} max={sliderInd-1} step={1} value={width} ></input>
             <svg ref={svgRef2} />
           </div>
 
