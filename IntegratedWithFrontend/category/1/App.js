@@ -1462,8 +1462,7 @@ const AreaLasso=() => {
 
   //History Slider PLOT START
   const svg3 = d3.select(svgRef3.current).attr("width", w).attr("height", h);
-
-  //console.log("sliderdata.sliderFullData :",sliderdata.sliderFullData)
+  
   svg3.selectAll('circle')
   .data(historydata.FullData)
   .enter()
@@ -1810,7 +1809,7 @@ const CatAdd = (value) => {
             <h4> {sliderText1} plot</h4>
             <div className="slidecontainer"> 
             <input type='range'  className="slider" id="myRange1" onChange={changeWidth1}
-              min={0} max={sliderInd1} step={1} value={width1} ></input>
+              min={0} max={sliderInd1-1} step={1} value={width1} ></input>
               <svg ref={svgRef3} />
             </div>
         </Drawer>
