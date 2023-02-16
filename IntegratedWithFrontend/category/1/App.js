@@ -10,11 +10,8 @@ import "./App.css"
 var qs = require('qs');
 const { Option } = Select;
 
-var rowno=0;
-var rowno2=0;
-
 var val = [];
-var val2=[];
+
 let IsDot=false;
 let LassoData=[];
 let IsAreaLasso=false;
@@ -48,7 +45,7 @@ let clicks = 0
 
 let InitdataType='Binary Feature'
 let NewdataType='Binary Feature'; 
-let IsDataChanged=false
+
 let IsCAT=false;
 
 let GlobalNumFrame=3;
@@ -112,27 +109,18 @@ class SliderOk extends React.Component {
   };
   
   dropdownChange=e=>{
-    
-    console.log(e)
-    
     if (e!=InitdataType){NewdataType=e;console.log(NewdataType,InitdataType)}
-    
     let dataType='Binary Feature'
     if (e==='arxiv_articles_UMAP.csv'){
       dataType='Category Feature'
     }
     else{dataType='Binary Feature'}
-    this.setState({selectValue:e,CategoryType:dataType});
-
-    
+    this.setState({selectValue:e,CategoryType:dataType});   
   }
 
 // POST BUTTON
   handleClick()  {
-   
-
-
-
+  
   //Timer  Start
     this.setState({timerBool:true}) 
     let timerNumber=0;
@@ -444,9 +432,7 @@ class SliderOk extends React.Component {
         <Divider /> 
         <Button size="small" onClick={this.handleClick} shape="round" style={{width:"200px",fontSize: "13px", color: "white",background: "black", borderColor: "black"}}>
         Updating data on Backend
-        </Button>
-
-        
+        </Button>       
       </div>
     );
   } 
@@ -497,8 +483,7 @@ const App = () => {
 
  
   const onSingleChange = (list) => {
-    
-
+    console.log("체크박스싱글리스트",list)
     setCheckedList(list);
     setIndeterminate(!!list.length && list.length < plainOptions.length);
     setCheckAll(list.length === plainOptions.length);
@@ -506,8 +491,7 @@ const App = () => {
 
       axios.get('http://localhost:5000/BackendData')
       .then(res => {
-          //divide data into variables
-
+        
       const DATA = res.data.XYData;
       const color_list=res.data.color_list;
       let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
@@ -534,34 +518,39 @@ const App = () => {
     })
     }	
     else if( list.includes("Outlier")) {
+      axios.get('http://localhost:5000/BackendData')
+      .then(res => {
 
-      let out_indices1 = data.FullData.map((c,i)=>c[2]===1?i:'').filter(String);
+      let out_indices1 = res.data.FullData.map((c,i)=>c[2]===1?i:'').filter(String);
       console.log( out_indices1)
-      let outlier1 =data.FullData.filter((_, ind) => out_indices1.includes(ind));
+      let outlier1 =res.data.FullData.filter((_, ind) => out_indices1.includes(ind));
       console.log(outlier1)
 
       setData(prevState => ({
         ...prevState,
         FullData: outlier1,
       }))
+     })
     }	
     else if( list.includes("Inlier")) {
-
-      let in_indices1 = data.FullData.map((c,i)=>c[2]!=1?i:'').filter(String);
+      axios.get('http://localhost:5000/BackendData')
+      .then(res => {
+      let in_indices1 = res.data.FullData.map((c,i)=>c[2]!=1?i:'').filter(String);
       console.log( in_indices1)
 
-      let inlier1 =data.FullData.filter((_, ind) => in_indices1.includes(ind));
+      let inlier1 =res.data.FullData.filter((_, ind) => in_indices1.includes(ind));
       console.log(inlier1)
       setData(prevState => ({
         ...prevState,
         FullData: inlier1,
       }))
+     })
     }	
     else{ 
 
     setData(prevState => ({
       ...prevState,
-      FullData: [[]],
+      FullData: "",
     }))}
 
   };
@@ -1159,8 +1148,7 @@ const AreaLasso=() => {
     };
 
     function drawPath() {
-        d3.select("#lasso")
-            
+        d3.select("#lasso")      
             .style("fill", "#00000054")
             .attr("d", lineGenerator(coords));
     }
@@ -1185,8 +1173,6 @@ const AreaLasso=() => {
     function dragEnd() {
         let xlist=[];
         let ylist=[];
-
-
         let selectedDots = [];
         lassocircles.each((d, i) => {
             let point = [ xScale(d[0]),yScale(d[1])];
@@ -1217,23 +1203,18 @@ const AreaLasso=() => {
             { 
               break;
             }
-          }
-         
-          funcline(hisarr2);
-           
+          }   
+          funcline(hisarr2);         
         } 
 
         console.log(`lasso select index: ${selectedDots}`);
        
-         
-
-        let aaa=[] 
         let cc;
         let HeatFinal=[]
         for(let ii=0;xlist.length>ii;ii++){
           for(let i=0;history.length>i;i++){
             for(let j=0; history[i].length>j;j++){
-              console.log("history[i][j][0]",history[i][j][0])
+              
               if((history[i][j][0]==xlist[ii])&&(history[i][j][1]==ylist[ii])){
                 if(history[i][j][2]!=1){
                   cc=0
@@ -1267,8 +1248,6 @@ const AreaLasso=() => {
 
 //Slider PLOT START
   const svg2 = d3.select(svgRef2.current).attr("width", w).attr("height", h);
-
-  console.log("그려지나sliderdata.sliderFullData :",sliderdata.sliderFullData)
   svg2.selectAll('circle')
   .data(sliderdata.sliderFullData)
   .enter()
@@ -1315,15 +1294,11 @@ const AreaLasso=() => {
     setaddColor2('black')
   
     val = [];
-    //myFunction(val) // have to be deleted
-    val2=[];
+
     LassoData=[];
     HeatMapData=[];
     //
 
-
-    //If your outlier table does not work well, you can uncomment below and assign index you want
-    //myFunction2(val, index)
     axios.get('http://localhost:5000/BackendData')
     .then(res => {
         //divide data into variables 
@@ -1398,7 +1373,7 @@ const AreaLasso=() => {
           
           setsliderInd(GlobalNumFrame+1)
           setsliderText("")
-          setsliderText2(`${GlobalNumFrame} Frames: ${(event.target.value)* 1 + 1} out of ${GlobalNumFrame}`)
+          setsliderText2(`${GlobalNumFrame} Frames: ${(event.target.value)* 1 } out of ${GlobalNumFrame}`)
           slidersetData(prevState => ({
             ...prevState,
             sliderFullData: sliderFullDATA.slice(startTrain,endTrain),
@@ -1431,6 +1406,7 @@ const AreaLasso=() => {
    
     console.log("click :",clicks)
     console.log("history :",history)
+    console.log("(event.target.value)* 1-1:",(event.target.value)* 1-1) 
     console.log("history[event.target.value-1]",history[(event.target.value)* 1-1]);
     let FullData=[[]];
     if ((event.target.value)* 1!=0){
@@ -1442,11 +1418,8 @@ const AreaLasso=() => {
       FullData= ''
       setsliderText1("Default");
     }
-     //console.log("FullData:",FullData)
-     //console.log("sliderText1 :",sliderText1)
-     //console.log("sliderText1 -1 :",sliderText1-1)
-    //sethistoryData(history[event.target.value-1])
-    setsliderInd1(clicks+1);
+      
+    setsliderInd1(history.length);
     sethistoryData(prevState => ({
       ...prevState,
       FullData: FullData,
@@ -1480,9 +1453,6 @@ const AreaLasso=() => {
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
   .attr('opacity',"0.65");
-
-
-
 
 //drawer start
 const [draweropen, setdrawerOpen] = useState(false);
@@ -1803,7 +1773,7 @@ const CatAdd = (value) => {
             <h4> {sliderText1} plot</h4>
             <div className="slidecontainer"> 
             <input type='range'  className="slider" id="myRange1" onChange={changeWidth1}
-              min={0} max={sliderInd1-1} step={1} value={width1} ></input>
+              min={0} max={sliderInd1} step={1} value={width1} ></input>
               <svg ref={svgRef3} />
             </div>
         </Drawer>
