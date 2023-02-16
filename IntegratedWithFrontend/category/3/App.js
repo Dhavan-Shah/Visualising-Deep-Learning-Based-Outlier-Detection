@@ -10,11 +10,8 @@ import "./App.css"
 var qs = require('qs');
 const { Option } = Select;
 
-var rowno=0;
-var rowno2=0;
-
 var val = [];
-var val2=[];
+
 let IsDot=false;
 let LassoData=[];
 let IsAreaLasso=false;
@@ -48,8 +45,12 @@ let clicks = 0
 
 let InitdataType='Binary Feature'
 let NewdataType='Binary Feature'; 
-let IsDataChanged=false
+
 let IsCAT=false;
+
+let GlobalNumFrame=3;
+let HeatMapData=[];
+let GlobalNbatch=100;
 
 class SliderOk extends React.Component {
   constructor(props) {
@@ -75,6 +76,7 @@ class SliderOk extends React.Component {
       () => {
         var SliderValue=this.state.value1     
         console.log("Slider value: ",SliderValue);
+        GlobalNumFrame=this.state.value1     
       }     
     );
 
@@ -100,33 +102,25 @@ class SliderOk extends React.Component {
       () => {
         var SliderValue=this.state.value3   
         console.log("Slider value: ",SliderValue);
+        GlobalNbatch=this.state.value3  
       }     
     );
 
   };
   
   dropdownChange=e=>{
-    //여기 바꿔야함 IsDataChange에 리스트 리셋되는거 조절
-    console.log(e)
-    
-    if (e!=InitdataType){console.log("바뀜!!!");NewdataType=e;console.log(NewdataType,InitdataType)}
-    
+    if (e!=InitdataType){NewdataType=e;console.log(NewdataType,InitdataType)}
     let dataType='Binary Feature'
     if (e==='arxiv_articles_UMAP.csv'){
       dataType='Category Feature'
     }
     else{dataType='Binary Feature'}
-    this.setState({selectValue:e,CategoryType:dataType});
-
-    
+    this.setState({selectValue:e,CategoryType:dataType});   
   }
 
 // POST BUTTON
   handleClick()  {
-   
-
-
-
+  
   //Timer  Start
     this.setState({timerBool:true}) 
     let timerNumber=0;
@@ -323,17 +317,22 @@ class SliderOk extends React.Component {
       }
       console.log("NewdataType:",NewdataType)
       console.log("InitdataType:",InitdataType) 
+
+      let PostBatchSize;  
+
       if (NewdataType!=InitdataType){
         if (NewdataType=='arxiv_articles_UMAP.csv'){IsCAT=true;}
         else{IsCAT=false}
-        
-        console.log("라스트인덱스 초기화")
+        //reset all
         last_index=[]
         last_index.push(Number(this.state.value3));
         InitdataType=NewdataType;
+        history=[];
+        clicks=0;
+        PostBatchSize=100;
       }
        
-
+      PostBatchSize=this.state.value3
       var Threshold = this.state.value2;
     // console.log(Threshold);  
  
@@ -346,7 +345,7 @@ class SliderOk extends React.Component {
         Threshold = this.state.value2; 
       }
       
-      const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
+      const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:PostBatchSize.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
 
       let data = qs.stringify(newdata)
       //console.log("data!!:",qs.parse(data))
@@ -418,7 +417,7 @@ class SliderOk extends React.Component {
         <p style={{fontSize: "12px",color:"DimGrey"}}>Batch size : {this.state.value3}</p>
         <Slider 
           min={100}
-          max={1000}
+          max={10000}
           step={10} // you can change this step size
           value={this.state.value3}
           onChange={this.onSliderChange3}
@@ -429,7 +428,7 @@ class SliderOk extends React.Component {
             opacity: 1,
             marginLeft: -8,
             marginTop: -8,
-            backgroundColor: "black",
+            backgroundColor: "black", 
             border: 0
           }}
           trackStyle={{ background: "none" }}
@@ -438,9 +437,7 @@ class SliderOk extends React.Component {
         <Divider /> 
         <Button size="small" onClick={this.handleClick} shape="round" style={{width:"200px",fontSize: "13px", color: "white",background: "black", borderColor: "black"}}>
         Updating data on Backend
-        </Button>
-
-        
+        </Button>       
       </div>
     );
   } 
@@ -463,7 +460,9 @@ const App = () => {
   const [checkAll, setCheckAll] = useState(false);
   const [data, setData] = useState({outlierCat:"",inlierCat:"",colorData:"",FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
   const [historydata, sethistoryData] = useState({FullData:""})
-  
+  const [heatdata, setheatData] = useState({data:""})
+
+
   const [incorrectNum, setincorrectNum] = useState(0);
   const [incorrectColor, setincorrectColor] = useState("black");
   const [deleteNum, setdeleteNum] = useState(0);
@@ -486,12 +485,12 @@ const App = () => {
   const svgRef3 = useRef();
   const svgRef4 = useRef();
   const svgRefL = useRef(); 
+  const svgRefH = useRef(); 
   const [sliderdata, slidersetData] = useState({sliderFullData:""})
 
  
   const onSingleChange = (list) => {
-    
-
+    console.log("체크박스싱글리스트",list)
     setCheckedList(list);
     setIndeterminate(!!list.length && list.length < plainOptions.length);
     setCheckAll(list.length === plainOptions.length);
@@ -499,8 +498,7 @@ const App = () => {
 
       axios.get('http://localhost:5000/BackendData')
       .then(res => {
-          //divide data into variables
-
+        
       const DATA = res.data.XYData;
       const color_list=res.data.color_list;
       let out_indices = color_list.map((c,i)=>c===1?i:'').filter(String);
@@ -527,34 +525,39 @@ const App = () => {
     })
     }	
     else if( list.includes("Outlier")) {
+      axios.get('http://localhost:5000/BackendData')
+      .then(res => {
 
-      let out_indices1 = data.FullData.map((c,i)=>c[2]===1?i:'').filter(String);
+      let out_indices1 = res.data.FullData.map((c,i)=>c[2]===1?i:'').filter(String);
       console.log( out_indices1)
-      let outlier1 =data.FullData.filter((_, ind) => out_indices1.includes(ind));
+      let outlier1 =res.data.FullData.filter((_, ind) => out_indices1.includes(ind));
       console.log(outlier1)
 
       setData(prevState => ({
         ...prevState,
         FullData: outlier1,
       }))
+     })
     }	
     else if( list.includes("Inlier")) {
-
-      let in_indices1 = data.FullData.map((c,i)=>c[2]!=1?i:'').filter(String);
+      axios.get('http://localhost:5000/BackendData')
+      .then(res => {
+      let in_indices1 = res.data.FullData.map((c,i)=>c[2]!=1?i:'').filter(String);
       console.log( in_indices1)
 
-      let inlier1 =data.FullData.filter((_, ind) => in_indices1.includes(ind));
+      let inlier1 =res.data.FullData.filter((_, ind) => in_indices1.includes(ind));
       console.log(inlier1)
       setData(prevState => ({
         ...prevState,
         FullData: inlier1,
       }))
+     })
     }	
     else{ 
 
     setData(prevState => ({
       ...prevState,
-      FullData: [[]],
+      FullData: "",
     }))}
 
   };
@@ -606,7 +609,7 @@ const App = () => {
     MinY=-13;
     MaxY=14;
     w=700 ;
-    h=500;
+    h=400;
   }
   else{
     MinX=-1;
@@ -614,9 +617,9 @@ const App = () => {
     MinY=-3;
     MaxY=17;
     w=800;
-    h=450;
+    h=400;
   }
-
+ 
 
   const xScale = d3.scaleLinear()
         .domain([MinX, MaxX])
@@ -633,6 +636,75 @@ const App = () => {
 
   //concnetric circlcle Start
   let svg4 = d3.select(svgRef4.current).attr("width", 800).attr("height",150);
+
+  let svgH = d3.select(svgRefH.current)
+  var myGroups = ["frame1", "frame2", "frame3", "frame4","frame5","frame6","frame7","frame8","frame9","frame10", ]
+  var myVars = ["p1", "p2", "p3","p4","p5","p6","p8","p9","p10"]
+  
+  var HeatText =  svg.selectAll('.HeatText')
+      .data(heatdata.data)
+      .enter()
+ 			.append("g")
+      
+    HeatText.append("text").text(function(d){
+            	return d[2];
+            })
+            .attr("x", function (d) {
+                return xScale(d[0]);
+            })
+            .attr("y", function (d) {
+                return yScale(d[1]+0.3);
+            })
+            .style("font-size", "0.8em");
+    svg.selectAll('text').data(heatdata.data).exit().remove()
+    
+
+  
+  
+  function HeatMap(arr){
+     
+    const ARR=[...arr]
+    
+    var margin = {top: 30, right: 30, bottom: 30, left: 30},
+    width = 800 - margin.left - margin.right,
+    height = 150 - margin.top - margin.bottom;
+    svgH.attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+  
+    var xH = d3.scaleBand()
+      .range([ 30, width])
+      .domain(myGroups)
+      .padding(0.01); 
+    svgH.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(xH))
+    var yH = d3.scaleBand()
+      .range([ height, 0 ])
+      .domain(myVars)
+      .padding(0.01);
+    svgH.append("g")
+      .attr("transform", "translate(30,0)")
+      .call(d3.axisLeft(yH));
+      
+
+    var CH=d3.scaleOrdinal()
+    .domain([0, 1,"white"])
+    .range([ "#75B79E","#F67280","white"])
+
+    svgH.selectAll("rect") 
+    .data(ARR)
+    .enter()
+    .append("rect")
+    .attr("x", function(d) { return xH(d[0]) })
+    .attr("y", function(d) { return yH(d[1]) })
+    .attr("width", xH.bandwidth() )
+    .attr("height", yH.bandwidth() )
+    .style("fill", function(d) { return CH(d[2])} )
+
+  }
 
   function funcline(arr)
   {
@@ -872,7 +944,7 @@ svgL.selectAll("text")
     .attr('fill',d=>C(d[2].toString())) 
     .attr('opacity',"0.65");
     
-
+  
   //exit
   svg.selectAll('circle')
   .data(data.FullData).exit().remove();
@@ -939,6 +1011,7 @@ svgL.selectAll("text")
        console.log(temp);  
        console.log(history);
        var hisarr = [];
+       var newhisarr = [];
        var ind = -100;
        for(var i=0; i<history[history.length- 1].length; i++)
        {
@@ -953,6 +1026,7 @@ svgL.selectAll("text")
        {
          if(history[j].length>= ind)
          {
+          
            hisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
          }
          else
@@ -962,9 +1036,22 @@ svgL.selectAll("text")
        }
        funcline(hisarr);
      //  console.log(hisarr);
-       hisarr.reverse();
-      // console.log(hisarr);
-       funcsvg(hisarr);
+     for(var j=history.length-1; j>-1;j--)
+       {
+         if((history[j].length>= ind)&&(newhisarr.length<GlobalNumFrame))
+         {
+          console.log("newhisarr.length",newhisarr.length)
+          
+           newhisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
+         }
+         else
+         { 
+           break; 
+         }
+       }
+       newhisarr.reverse();
+       //console.log("newhisarr",newhisarr);
+       funcsvg(newhisarr);
 
      })
      .on('click', function(){
@@ -984,7 +1071,7 @@ svgL.selectAll("text")
      //  console.log("xvalue:",xvalue);
      //  console.log("yvalue : ",yvalue);
      //  console.log(" xval, yval");
-       if (d3.select(this).attr('fill')=='purple')
+       if (d3.select(this).attr('fill')=='yellow')
        {
          console.log("HEREEEEEEEEE");
          for(var j=0;j<data.Outlier.length;j++)
@@ -1024,7 +1111,7 @@ svgL.selectAll("text")
        }
        else
        {
-         d3.select(this).attr('fill','purple');
+         d3.select(this).attr('fill','yellow');
          d3.select(this).attr('opacity', 1.0);
        }
      console.log(val);
@@ -1036,6 +1123,7 @@ svgL.selectAll("text")
        d3.select(this).attr('stroke', null);
        //var gsvg = svg4.append('g');
        svg4.selectAll("*").remove();
+       
      }) 
    }
  }
@@ -1048,8 +1136,8 @@ const AreaLasso=() => {
   
   if ((lassoNum%2)===1){
     IsAreaLasso=true;
-    let lassoData=data.FullData
-   
+    let lassoData=[...data.FullData]
+    HeatMapData=[]
     let n=0
     for (let i of lassoData) { 
       i.push(n++)
@@ -1088,13 +1176,13 @@ const AreaLasso=() => {
     };
 
     function drawPath() {
-        d3.select("#lasso")
-            
+        d3.select("#lasso")      
             .style("fill", "#00000054")
             .attr("d", lineGenerator(coords));
     }
-
+ 
     function dragStart() {
+        svgH.selectAll("*").remove();
         coords = [];
         //lassocircles.attr("fill", "steelblue");
         d3.select("#lasso").remove();
@@ -1111,6 +1199,8 @@ const AreaLasso=() => {
     }
 
     function dragEnd() {
+        let xlist=[];
+        let ylist=[];
         let selectedDots = [];
         lassocircles.each((d, i) => {
             let point = [ xScale(d[0]),yScale(d[1])];
@@ -1118,7 +1208,10 @@ const AreaLasso=() => {
                 d3.select("#dot-" + d[3]).attr("fill", "yellow");
                 
                 selectedDots.push(d[3]);
+                xlist.push(d[0]);
+                ylist.push(d[1]);
                 LassoData.push([d[0],d[1]])
+                HeatMapData.push([d[0],d[1],d[2],d[3]])
                 console.log(`lasso selected point: ${[d[0],d[1]]}`);
 
             }
@@ -1138,15 +1231,42 @@ const AreaLasso=() => {
             { 
               break;
             }
-          }
-          funcline(hisarr2);
-
-        }
+          }   
+          funcline(hisarr2);         
+        } 
 
         console.log(`lasso select index: ${selectedDots}`);
+       
+        let cc;
+        let HeatFinal=[];
+        let HeatPoint=[];
+
+        for(let ii=0;xlist.length>ii;ii++){
+          for(let i=0;history.length>i;i++){
+            for(let j=0; history[i].length>j;j++){
+              
+              if((history[i][j][0]==xlist[ii])&&(history[i][j][1]==ylist[ii])){
+                if(history[i][j][2]!=1){
+                  cc=0
+                }
+                else(cc=history[i][j][2])
+                HeatFinal.push([myGroups[i], myVars[ii] ,cc])}
+            }
+          }
+          console.log("인덱스데이터",xlist[ii],ylist[ii],myVars[ii])
+          HeatPoint.push([xlist[ii],ylist[ii],myVars[ii]])
+
+        }
+        console.log("HeatFinal:",HeatFinal)
+        HeatMap(HeatFinal)
+        setheatData(prevState => ({
+          ...prevState,
+          data:  HeatPoint,
+          
+        }))
         
     }
-
+    
     const drag = d3
         .drag()
         .on("start", dragStart)
@@ -1157,7 +1277,7 @@ const AreaLasso=() => {
   }
   
   //
-}
+} 
 
 //Area Lasso End
 
@@ -1166,8 +1286,6 @@ const AreaLasso=() => {
 
 //Slider PLOT START
   const svg2 = d3.select(svgRef2.current).attr("width", w).attr("height", h);
-
-  //console.log("sliderdata.sliderFullData :",sliderdata.sliderFullData)
   svg2.selectAll('circle')
   .data(sliderdata.sliderFullData)
   .enter()
@@ -1214,14 +1332,11 @@ const AreaLasso=() => {
     setaddColor2('black')
   
     val = [];
-    //myFunction(val) // have to be deleted
-    val2=[];
+
     LassoData=[];
+    HeatMapData=[];
     //
 
-
-    //If your outlier table does not work well, you can uncomment below and assign index you want
-    //myFunction2(val, index)
     axios.get('http://localhost:5000/BackendData')
     .then(res => {
         //divide data into variables 
@@ -1279,56 +1394,49 @@ const AreaLasso=() => {
 
   const changeWidth = (event) => {
     setWidth(event.target.value);
-
-    axios.get('http://localhost:5000/BackendData')
-    .then(res => {
-        //divide data into variables
-        const sliderFullDATA = res.data.FullData;
-        const last_index = res.data.last_index;
-        const Nbatch=Number(res.data.Nbatch);
-        console.log("sliderFullDATA SIZE :",sliderFullDATA.length)  
-        console.log("clicks:",clicks)
-        console.log("Nbatch :",Nbatch)
-
-        sliderindexList=last_index[0].slice(1)
-        sliderindexList.push(sliderFullDATA.length)
-      console.log("sliderindexList :",sliderindexList)
-      console.log("event.target.value :",event.target.value)
-
+    console.log("event.target.value",event.target.value)
+    
+    const sliderFullDATA = history.slice(-1)[0];
+            
+    console.log("sliderFullDATA SIZE :",sliderFullDATA)  
+    console.log("clicks:",clicks)
+    console.log("GlobalNumFrame :",GlobalNumFrame)
+    
       let startTrain=0;
-      setsliderText(`${clicks} testing batch < ${Nbatch} Frames (${Nbatch-clicks} batch needed more)`)
-      setsliderInd(clicks)
-      setsliderText2(`${clicks} Frames: ${event.target.value} out of ${clicks} `)
-      if (Number(event.target.value)===0){
-        setsliderText("")
-        setsliderText2(`${Nbatch} Frames: `)
-        slidersetData(prevState => ({
-          ...prevState,
-          sliderFullData: [[]]
-       }))}
-      else{
-        if (clicks>=Nbatch){   
-          startTrain=sliderindexList[sliderindexList.length-Nbatch-1];
-          console.log("startTrain:",startTrain)
-          setsliderInd(Nbatch+1)
+      let endTrain=0;
+        if ((clicks)>GlobalNumFrame){   
+          
+          startTrain=last_index[last_index.length-GlobalNumFrame-1];
+          endTrain=last_index[last_index.length-GlobalNumFrame-1+(event.target.value)* 1 ];
+          
+          setsliderInd(GlobalNumFrame+1)
           setsliderText("")
-          setsliderText2(`${Nbatch} Frames: ${event.target.value-1} out of ${Nbatch} batches`)
-          console.log("event.target.value :",event.target.value)
-          console.log("sliderindexList.length-Nbatch-1 :",sliderindexList.length-Nbatch-1)
-          console.log("sliderindexList.length-Nbatch-1+event.target.value :",sliderindexList.length-Nbatch-1+Number(event.target.value))
-          console.log("sliderindexList[sliderindexList.length - 1] :",sliderindexList[sliderindexList.length - 1])
-          if (Number(event.target.value)===1){
-            setsliderText("Default")
-          }
-
+          setsliderText2(`${GlobalNumFrame} Frames: ${(event.target.value)* 1 } out of ${GlobalNumFrame}`)
+          slidersetData(prevState => ({
+            ...prevState,
+            sliderFullData: sliderFullDATA.slice(startTrain,endTrain),
+  
+        }))
+            
         }
+        else{
+        
+          const sliderindexList=[...last_index]
+          sliderindexList.unshift(0)
+          console.log("last_index :",last_index)
+          console.log("sliderindexList :",sliderindexList)
+          setsliderText(`${clicks} testing frame < ${GlobalNumFrame} Frames (${GlobalNumFrame-clicks} needed more)`)
+          setsliderInd(clicks)
+          setsliderText2(`${clicks} Frames: ${(event.target.value)* 1 + 1} out of ${clicks} `)
+         
+    
           slidersetData(prevState => ({
           ...prevState,
-          sliderFullData: sliderFullDATA.slice(startTrain,sliderindexList[sliderindexList.length-Nbatch-1+Number(event.target.value)]),
+          sliderFullData: sliderFullDATA.slice(0,sliderindexList[(event.target.value)* 1+1]),
 
       }))
-  }})
-
+  
+    }
   };
 
   const changeWidth1 = (event) => {
@@ -1336,22 +1444,20 @@ const AreaLasso=() => {
    
     console.log("click :",clicks)
     console.log("history :",history)
-    console.log("history[event.target.value-1]",history[event.target.value-1]);
+    console.log("(event.target.value)* 1-1:",(event.target.value)* 1-1) 
+    console.log("history[event.target.value-1]",history[(event.target.value)* 1-1]);
     let FullData=[[]];
-    if (Number(event.target.value)!=0){
-      FullData= history[event.target.value-1]
+    if ((event.target.value)* 1!=0){
+      FullData= history[(event.target.value)* 1-1]
       setsliderText1(event.target.value);
     }
-    if (Number(event.target.value)==0){
-      console.log("Default")
-      FullData= [[]]
+    if ((event.target.value)* 1==0){
+      console.log("Default") 
+      FullData= ''
       setsliderText1("Default");
     }
-     //console.log("FullData:",FullData)
-     //console.log("sliderText1 :",sliderText1)
-     //console.log("sliderText1 -1 :",sliderText1-1)
-    //sethistoryData(history[event.target.value-1])
-    setsliderInd1(clicks+1);
+      
+    setsliderInd1(history.length);
     sethistoryData(prevState => ({
       ...prevState,
       FullData: FullData,
@@ -1361,8 +1467,7 @@ const AreaLasso=() => {
 
   //History Slider PLOT START
   const svg3 = d3.select(svgRef3.current).attr("width", w).attr("height", h);
-
-  //console.log("sliderdata.sliderFullData :",sliderdata.sliderFullData)
+  
   svg3.selectAll('circle')
   .data(historydata.FullData)
   .enter()
@@ -1386,9 +1491,6 @@ const AreaLasso=() => {
   .attr('cy',d=>yScale(d[1]))
   .attr('r',2)
   .attr('opacity',"0.65");
-
-
-
 
 //drawer start
 const [draweropen, setdrawerOpen] = useState(false);
@@ -1646,14 +1748,14 @@ const outl = () => {
 }
 const CatAdd = (value) => {
   console.log(value);
-  setCatAddName(value)
+  setCatAddName(value) 
 };
 
   return (
     <div style={{ margin: 10 ,width:"700",height:"600"}}>
 
       <Layout style={{  backgroundColor:'white',borderColor: "black" }}>
-        <Sider width={ "350"}  style={{height: 600,backgroundColor:'OldLace',marginLeft: 10,marginRight: 20}}>  
+        <Sider width={ "350"}  style={{backgroundColor:'OldLace',marginLeft: 10,marginRight: 20}}>  
           <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 30,marginRight: 30}}>Outlier Detection and Monitoring<br></br> for Streaming data</p>
               <Content style={{ height:  "100%"}}>
               <Divider />
@@ -1664,7 +1766,7 @@ const CatAdd = (value) => {
                 
                 </Content>
         </Sider>
-        <Layout style={{height: 600, marginTop:5,marginLeft:20,backgroundColor:'White'}}>
+        <Layout style={{ marginTop:5,marginLeft:20,backgroundColor:'White'}}>
             <Content style={{ width: 500}}  >
               <div className="container">
               <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll} >
@@ -1673,17 +1775,18 @@ const CatAdd = (value) => {
             </div>
             
           </Content>
-        <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
+        <Layout style={{backgroundColor:'White',width: 500,height: 450}}>
           <svg id="chart" ref={svgRef} />
         </Layout>
-        <br></br>
-        <br></br>
+        
         <Layout style={{backgroundColor: "white"}}>
           <svg ref = {svgRef4} />
         </Layout>
-        
+        <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
+        <svg ref={svgRefH} />
         </Layout>
-      <Sider width={"145"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
+        </Layout>
+      <Sider width={"145"} style={{backgroundColor:'white',marginLeft: 10,marginRight: 30}}>  
        <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[  Tool Tips  ]</p>        
        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginRight: 10,marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
           Process 
@@ -1693,7 +1796,7 @@ const CatAdd = (value) => {
             <h4>{sliderText} </h4>
           <div className="slidecontainer">
           <input type='range'  className="slider" id="myRange" onChange={changeWidth}
-            min={0} max={sliderInd} step={1} value={width} ></input>
+            min={0} max={sliderInd-1} step={1} value={width} ></input>
             <svg ref={svgRef2} />
           </div>
 
@@ -1788,6 +1891,7 @@ const CatAdd = (value) => {
         <br></br>
         <svg ref={svgRefL} />
       </Sider>
+      
       </Layout>
       
     </div>
