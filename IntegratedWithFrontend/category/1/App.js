@@ -59,7 +59,7 @@ class SliderOk extends React.Component {
     this.state = {
       value1: 3,
       value2: 0.5,
-      value3:10 , 
+      value3:100 , 
       selectValue:'HR_diagram.csv',
       CategoryType:'Binary Feature',
       timerBool:false  
@@ -411,8 +411,8 @@ class SliderOk extends React.Component {
         />
         <p style={{fontSize: "12px",color:"DimGrey"}}>Batch size : {this.state.value3}</p>
         <Slider 
-          min={10}
-          max={1000}
+          min={100}
+          max={10000}
           step={10} // you can change this step size
           value={this.state.value3}
           onChange={this.onSliderChange3}
@@ -423,7 +423,7 @@ class SliderOk extends React.Component {
             opacity: 1,
             marginLeft: -8,
             marginTop: -8,
-            backgroundColor: "black",
+            backgroundColor: "black", 
             border: 0
           }}
           trackStyle={{ background: "none" }}
@@ -602,7 +602,7 @@ const App = () => {
     MinY=-13;
     MaxY=14;
     w=700 ;
-    h=500;
+    h=400;
   }
   else{
     MinX=-1;
@@ -610,7 +610,7 @@ const App = () => {
     MinY=-3;
     MaxY=17;
     w=800;
-    h=450;
+    h=400;
   }
 
 
@@ -1737,12 +1737,10 @@ const CatAdd = (value) => {
             </div>
             
           </Content>
-        <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
+        <Layout style={{backgroundColor:'White',width: 500,height: 450}}>
           <svg id="chart" ref={svgRef} />
         </Layout>
         
-        <br></br>
-        <br></br>
         <Layout style={{backgroundColor: "white"}}>
           <svg ref = {svgRef4} />
         </Layout>
@@ -1750,7 +1748,7 @@ const CatAdd = (value) => {
         <svg ref={svgRefH} />
         </Layout>
         </Layout>
-      <Sider width={"145"} style={{backgroundColor:'white',marginLeft: 100,marginRight: 10}}>  
+      <Sider width={"145"} style={{backgroundColor:'white',marginLeft: 10,marginRight: 30}}>  
        <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[  Tool Tips  ]</p>        
        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginRight: 10,marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
           Process 
