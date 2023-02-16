@@ -317,6 +317,9 @@ class SliderOk extends React.Component {
       }
       console.log("NewdataType:",NewdataType)
       console.log("InitdataType:",InitdataType) 
+
+      let PostBatchSize;  
+
       if (NewdataType!=InitdataType){
         if (NewdataType=='arxiv_articles_UMAP.csv'){IsCAT=true;}
         else{IsCAT=false}
@@ -324,10 +327,12 @@ class SliderOk extends React.Component {
         last_index=[]
         last_index.push(Number(this.state.value3));
         InitdataType=NewdataType;
-        history=[]
+        history=[];
+        clicks=0;
+        PostBatchSize=100;
       }
        
-
+      PostBatchSize=this.state.value3
       var Threshold = this.state.value2;
     // console.log(Threshold);  
  
@@ -340,7 +345,7 @@ class SliderOk extends React.Component {
         Threshold = this.state.value2; 
       }
       
-      const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:this.state.value3.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
+      const newdata={FullData:'[[]]',DeletingData:qs.stringify(miscal4),AddingData:qs.stringify(miscal5),XYData:qs.stringify(Totalmiscal),color_list:'[1,0]',Nbatch:this.state.value1.toString(),Threshold:this.state.value2.toString(),BatchSize:PostBatchSize.toString(),FileName:this.state.selectValue.toString(),last_index:last_index.toString(), clicks:clicks.toString()};
 
       let data = qs.stringify(newdata)
       //console.log("data!!:",qs.parse(data))
@@ -612,7 +617,7 @@ const App = () => {
     w=800;
     h=400;
   }
-
+ 
 
   const xScale = d3.scaleLinear()
         .domain([MinX, MaxX])
