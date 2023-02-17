@@ -899,7 +899,7 @@ const App = () => {
   //LABEL
   let colorLabelName=d3.scaleOrdinal()
   .domain(["0", "1", "-1","-2","-3","2","3","4","5","6","7","8","9","10","11","12","13"])
-  .range([ "inlier","outlier","added inlier","added outlier","misclassification",'astro-ph' ,'cond-mat', 'cs' ,'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th', 'math', 'other' ,'physics' ,'quant-ph'])
+  .range([ "inlier","outlier","added inlier","added outlier","seleted point",'astro-ph' ,'cond-mat', 'cs' ,'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th', 'math', 'other' ,'physics' ,'quant-ph'])
   
   //label enter
   let svgL = d3.select(svgRefL.current).attr("width", w).attr("height", h)
