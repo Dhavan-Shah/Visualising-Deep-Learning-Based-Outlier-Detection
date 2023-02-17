@@ -114,6 +114,10 @@ class SliderOk extends React.Component {
     if (e==='arxiv_articles_UMAP.csv'){
       dataType='Category Feature'
     }
+    if (e==='PyOD.csv'){
+      dataType='Binary Feature'
+    }
+    
     else{dataType='Binary Feature'}
     this.setState({selectValue:e,CategoryType:dataType});   
   }
@@ -321,7 +325,7 @@ class SliderOk extends React.Component {
       let PostBatchSize;  
 
       if (NewdataType!=InitdataType){
-        if (NewdataType=='arxiv_articles_UMAP.csv'){IsCAT=true;}
+        if (NewdataType!='HR_diagram.csv'){IsCAT=true;}
         else{IsCAT=false}
         //reset all
         last_index=[]
@@ -373,6 +377,7 @@ class SliderOk extends React.Component {
         <Select value={this.state.selectValue} onChange={this.dropdownChange} >
           <Option value="arxiv_articles_UMAP.csv">arxiv_articles_UMAP.csv</Option>
           <Option value="HR_diagram.csv">HR_diagram.csv</Option> 
+          <Option value="PyOD.csv">PyOD.csv</Option> 
         </Select>
         <br></br>
         <br></br>
@@ -398,7 +403,7 @@ class SliderOk extends React.Component {
         <p style={{fontSize: "12px",color:"DimGrey"}}>Threshold : {this.state.value2}</p>
         <Slider 
           min={0.0}
-          max={1.0}
+          max={1.0} 
           step={0.01}
           value={this.state.value2}
           onChange={this.onSliderChange2}
@@ -460,7 +465,9 @@ const App = () => {
   const [checkAll, setCheckAll] = useState(false);
   const [data, setData] = useState({outlierCat:"",inlierCat:"",colorData:"",FileName:"",FullData:"",DATA:"",Outlier:"",out_indices:"",Inlier:"",in_indices:"",last_index:""})
   const [historydata, sethistoryData] = useState({FullData:""})
-  
+  const [heatdata, setheatData] = useState({data:""})
+
+
   const [incorrectNum, setincorrectNum] = useState(0);
   const [incorrectColor, setincorrectColor] = useState("black");
   const [deleteNum, setdeleteNum] = useState(0);
@@ -601,7 +608,16 @@ const App = () => {
   let w;
   let h; 
   
-  if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
+  if (data.FileName[0]==='PyOD.csv'){
+    
+    MinX=-7;
+    MaxX=10;
+    MinY=-7;
+    MaxY=10;
+    w=800 ;
+    h=400;
+  }
+  else if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
     MinX=-13;
     MaxX=10;
     MinY=-13;
@@ -638,8 +654,29 @@ const App = () => {
   let svgH = d3.select(svgRefH.current)
   var myGroups = ["frame1", "frame2", "frame3", "frame4","frame5","frame6","frame7","frame8","frame9","frame10", ]
   var myVars = ["p1", "p2", "p3","p4","p5","p6","p8","p9","p10"]
-  function HeatMap(arr){
+  
+  var HeatText =  svg.selectAll('.HeatText')
+      .data(heatdata.data)
+      .enter()
+ 			.append("g")
+      
+    HeatText.append("text").text(function(d){
+            	return d[2];
+            })
+            .attr("x", function (d) {
+                return xScale(d[0]);
+            })
+            .attr("y", function (d) {
+                return yScale(d[1]+0.3);
+            })
+            .style("font-size", "0.8em");
+    svg.selectAll('text').data(heatdata.data).exit().remove()
     
+
+  
+  
+  function HeatMap(arr){
+     
     const ARR=[...arr]
     
     var margin = {top: 30, right: 30, bottom: 30, left: 30},
@@ -654,7 +691,7 @@ const App = () => {
     var xH = d3.scaleBand()
       .range([ 30, width])
       .domain(myGroups)
-      .padding(0.01);
+      .padding(0.01); 
     svgH.append("g")
     .attr("transform", "translate(0," + height + ")")
     .call(d3.axisBottom(xH))
@@ -1215,7 +1252,9 @@ const AreaLasso=() => {
         console.log(`lasso select index: ${selectedDots}`);
        
         let cc;
-        let HeatFinal=[]
+        let HeatFinal=[];
+        let HeatPoint=[];
+
         for(let ii=0;xlist.length>ii;ii++){
           for(let i=0;history.length>i;i++){
             for(let j=0; history[i].length>j;j++){
@@ -1228,10 +1267,18 @@ const AreaLasso=() => {
                 HeatFinal.push([myGroups[i], myVars[ii] ,cc])}
             }
           }
+          console.log("인덱스데이터",xlist[ii],ylist[ii],myVars[ii])
+          HeatPoint.push([xlist[ii],ylist[ii],myVars[ii]])
+
         }
         console.log("HeatFinal:",HeatFinal)
         HeatMap(HeatFinal)
-       
+        setheatData(prevState => ({
+          ...prevState,
+          data:  HeatPoint,
+          
+        }))
+        
     }
     
     const drag = d3
