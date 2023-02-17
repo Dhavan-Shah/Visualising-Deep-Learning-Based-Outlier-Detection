@@ -495,7 +495,7 @@ const App = () => {
 
  
   const onSingleChange = (list) => {
-    console.log("체크박스싱글리스트",list)
+    
     setCheckedList(list);
     setIndeterminate(!!list.length && list.length < plainOptions.length);
     setCheckAll(list.length === plainOptions.length);
@@ -787,6 +787,7 @@ const App = () => {
 
   }
 
+
   function funcsvg(arr)
   {
     console.log("Entered funcsvg");
@@ -805,17 +806,17 @@ const App = () => {
       if(i<arr.length)
       {
         x_1.push((i*100)/(arr.length) + x);
-        if(arr[i][2] == 0)
-        {
-          dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
-          //lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
-          console.log("Green Execution");
-        }
-        else
+        if(arr[i][2] == 1)
         {
           dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 110]);
           //lindat.push([(i*100)/(arr.length) + x, 140, "red"]);
           console.log("Red Execution");
+        }
+        else
+        {
+          dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
+          //lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
+          console.log("Green Execution");
         }
       }
       else
@@ -845,7 +846,6 @@ const App = () => {
       .attr("stroke-width", 1);
     
     /*
-
     glin.selectAll('circle')
       .data(x_1)
       .enter()
@@ -870,7 +870,7 @@ const App = () => {
 
     /*
     glin.selectAll('circle')
-      .data(li)
+      .data(li) 
       .enter()
       .append("line")
       .attr("x1",function(d){return d[0];})
@@ -882,6 +882,7 @@ const App = () => {
     */
     
   }
+
 
 
 
@@ -918,7 +919,7 @@ const App = () => {
   legend.append("text")
     .attr("x",  30)
     .attr("y", 4)
-    .attr("dy", ".35em")
+    .attr("dy", ".35em") 
     .style("text-anchor", "start")
     .text(function(d) { return colorLabelName(d.toString()); });
 
@@ -1096,7 +1097,7 @@ svgL.selectAll("text")
              console.log("----------------HEREEEEEEEEE--------------");
              d3.select(this).attr('fill','red');
              d3.select(this).attr('opacity', 0.5);
-             break;
+             break; 
            } 
            else
            { 
