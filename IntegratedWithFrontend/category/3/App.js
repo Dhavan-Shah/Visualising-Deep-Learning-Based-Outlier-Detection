@@ -114,6 +114,10 @@ class SliderOk extends React.Component {
     if (e==='arxiv_articles_UMAP.csv'){
       dataType='Category Feature'
     }
+    if (e==='PyOD.csv'){
+      dataType='Binary Feature'
+    }
+    
     else{dataType='Binary Feature'}
     this.setState({selectValue:e,CategoryType:dataType});   
   }
@@ -171,7 +175,7 @@ class SliderOk extends React.Component {
         console.log("Deleting miscal4 :",miscal4) 
       } 
   }
-  miscal5 = [[-1, -1, -1],[-1, -1, -1]]; 
+  miscal5 = []; 
   if (IsAdding2===true){
     console.log("Outlier IsADDING2 ON")
     for (var i=0;i<AddingPointsList2.length;i++) {
@@ -231,7 +235,12 @@ class SliderOk extends React.Component {
   }
   if ((IsAreaLasso===true) && (IsDot===false)){
     console.log("only lasso ON")
-    miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]; 
+    if (IsCAT)
+    {miscal3 = [[-1, -1, -1, -1, -1],[-1, -1, -1, -1, -1]];} 
+    else
+    {
+      miscal3 = [[-1, -1, -1, -1],[-1, -1, -1, -1]]
+    }
     for(var i=0;i<LassoData.length;i++) 
       {
         //outlier->inlier
@@ -272,7 +281,8 @@ class SliderOk extends React.Component {
       //point selection
       console.log("only dot ON")
       var z = val.length;
-      miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];
+      if (IsCAT){miscal = [[-1, -1, -1, -1, -1],[-1, -1, -1 , -1, -1]]}
+      else {miscal = [[-1, -1, -1, -1],[-1, -1, -1, -1]];}
       for(var i=0;i<z;i++)
       {
         for(var j=0;j<outlier.length;j++)
@@ -282,7 +292,7 @@ class SliderOk extends React.Component {
             var x = outlier[j][0];
             var y = outlier[j][1];
             if (IsCAT){miscal.push([x,y,0,out_indicesList[j],OutlierCat[j]])}
-            else{miscal.push([x,y,0,out_indicesList[j]]);}
+            else{miscal.push([x,y,0,out_indicesList[j]]);} 
           }
         }
         //inlier->outlier
@@ -321,7 +331,7 @@ class SliderOk extends React.Component {
       let PostBatchSize;  
 
       if (NewdataType!=InitdataType){
-        if (NewdataType=='arxiv_articles_UMAP.csv'){IsCAT=true;}
+        if (NewdataType!='HR_diagram.csv'){IsCAT=true;}
         else{IsCAT=false}
         //reset all
         last_index=[]
@@ -373,6 +383,7 @@ class SliderOk extends React.Component {
         <Select value={this.state.selectValue} onChange={this.dropdownChange} >
           <Option value="arxiv_articles_UMAP.csv">arxiv_articles_UMAP.csv</Option>
           <Option value="HR_diagram.csv">HR_diagram.csv</Option> 
+          <Option value="PyOD.csv">PyOD.csv</Option> 
         </Select>
         <br></br>
         <br></br>
@@ -398,7 +409,7 @@ class SliderOk extends React.Component {
         <p style={{fontSize: "12px",color:"DimGrey"}}>Threshold : {this.state.value2}</p>
         <Slider 
           min={0.0}
-          max={1.0}
+          max={1.0} 
           step={0.01}
           value={this.state.value2}
           onChange={this.onSliderChange2}
@@ -490,7 +501,7 @@ const App = () => {
 
  
   const onSingleChange = (list) => {
-    console.log("체크박스싱글리스트",list)
+    
     setCheckedList(list);
     setIndeterminate(!!list.length && list.length < plainOptions.length);
     setCheckAll(list.length === plainOptions.length);
@@ -603,7 +614,16 @@ const App = () => {
   let w;
   let h; 
   
-  if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
+  if (data.FileName[0]==='PyOD.csv'){
+    
+    MinX=-7;
+    MaxX=10;
+    MinY=-7;
+    MaxY=10;
+    w=800 ;
+    h=400;
+  }
+  else if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
     MinX=-13;
     MaxX=10;
     MinY=-13;
@@ -637,7 +657,6 @@ const App = () => {
   //concnetric circlcle Start
   let svg4 = d3.select(svgRef4.current).attr("width", 800).attr("height",150);
 
-  let svgH = d3.select(svgRefH.current)
   var myGroups = ["frame1", "frame2", "frame3", "frame4","frame5","frame6","frame7","frame8","frame9","frame10", ]
   var myVars = ["p1", "p2", "p3","p4","p5","p6","p8","p9","p10"]
   
@@ -661,50 +680,51 @@ const App = () => {
 
   
   
-  function HeatMap(arr){
+    function HeatMap(arr,NumPoint, NumFrame){
+      console.log("NumPoint:",NumPoint," NumFrame:", NumFrame)
+      const ARR=[...arr]
      
-    const ARR=[...arr]
+      var margin = {top: 30, right: 30, bottom: 0, left: 30},
+      width = 720 - margin.left - margin.right,
+      height = 150 - margin.top - margin.bottom;
+      svg4.attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
     
-    var margin = {top: 30, right: 30, bottom: 30, left: 30},
-    width = 800 - margin.left - margin.right,
-    height = 150 - margin.top - margin.bottom;
-    svgH.attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
-  
-    var xH = d3.scaleBand()
-      .range([ 30, width])
-      .domain(myGroups)
-      .padding(0.01); 
-    svgH.append("g")
-    .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(xH))
-    var yH = d3.scaleBand()
-      .range([ height, 0 ])
-      .domain(myVars)
-      .padding(0.01);
-    svgH.append("g")
-      .attr("transform", "translate(30,0)")
-      .call(d3.axisLeft(yH));
+      var xH = d3.scaleBand()
+        .range([ 200, width])
+        .domain(myGroups.slice(0, NumFrame))
+        .padding(0.01); 
       
-
-    var CH=d3.scaleOrdinal()
-    .domain([0, 1,"white"])
-    .range([ "#75B79E","#F67280","white"])
-
-    svgH.selectAll("rect") 
-    .data(ARR)
-    .enter()
-    .append("rect")
-    .attr("x", function(d) { return xH(d[0]) })
-    .attr("y", function(d) { return yH(d[1]) })
-    .attr("width", xH.bandwidth() )
-    .attr("height", yH.bandwidth() )
-    .style("fill", function(d) { return CH(d[2])} )
-
-  }
+      svg4.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(xH))
+      var yH = d3.scaleBand()
+        .range([ height, 0 ])
+        .domain(myVars.slice(0,NumPoint))
+        .padding(0.01);
+      svg4.append("g")
+        .attr("transform", "translate(200,0)")
+        .call(d3.axisLeft(yH));
+        
+  
+      var CH=d3.scaleOrdinal()
+      .domain([0, 1,"white"])
+      .range([ "#75B79E","#F67280","white"])
+  
+      svg4.selectAll("rect") 
+      .data(ARR)
+      .enter()
+      .append("rect")
+      .attr("x", function(d) { return xH(d[0]) })
+      .attr("y", function(d) { return yH(d[1]) })
+      .attr("width", xH.bandwidth() )
+      .attr("height", yH.bandwidth() )
+      .style("fill", function(d) { return CH(d[2])} )
+  
+    }
 
   function funcline(arr)
   {
@@ -715,7 +735,7 @@ const App = () => {
     //var dataLevel = [];
     //y = 10, 110
     //x = 120, 220
-    var x = 400;
+    var x = 130;
     var x_1 = [];
     //var x_2 = [];
     for(var i=0; i<11; i++) 
@@ -773,108 +793,9 @@ const App = () => {
 
   }
 
-  function funcsvg(arr)
-  {
-    console.log("Entered funcsvg");
-    console.log(arr);
-    var gsvg = svg4.append('g');
-    var glin = svg4.append('g');
-    var lindat = [];
-    var dataLevel = [];
-    //y = 10, 140
-    //x = 120, 220
-    var x = 300;
-    var x_1 = [];
-    //var x_2 = [];
-    for(var i=0; i<11; i++) 
-    {
-      if(i<arr.length)
-      {
-        x_1.push((i*100)/(arr.length) + x);
-        if(arr[i][2] == 0)
-        {
-          dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
-          //lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
-          console.log("Green Execution");
-        }
-        else
-        {
-          dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 110]);
-          //lindat.push([(i*100)/(arr.length) + x, 140, "red"]);
-          console.log("Red Execution");
-        }
-      }
-      else
-      {
-        break;
-      }
-    }
-    /*var li = [];
-    for(var k=0; k<lindat.length-1;k++)
-    {
-      li.push([lindat[k][0], lindat[k][1], lindat[k+1][0], lindat[k+1][1], lindat[k+1][2]]);
-    }
-    
-    console.log(li);*/
-    console.log(dataLevel);
-    dataLevel.reverse();
-    console.log(dataLevel);
-    gsvg.selectAll('circle')
-      .data(dataLevel)
-      .enter()
-      .append("circle")
-      .attr("cx", 100)
-      .attr("cy", 60)
-      .attr("r", function(d){return d[0];})
-      .attr("fill", function(d){return d[1];})
-      .attr("stroke", "black")
-      .attr("stroke-width", 1);
-    
-    /*
-
-    glin.selectAll('circle')
-      .data(x_1)
-      .enter()
-      .append("line")
-      .attr("x1",function(d){return d})
-      .attr("x2",function(d){return d})
-      .attr("y1", 10)
-      .attr("y2", 140)
-      .style("stroke", "black")
-      .style("stroke-width", 5); */
-
-    gsvg.selectAll('circle')
-      .data(dataLevel)
-      .enter()
-      .append("circle")
-      .attr("cx", function(d){return d[2];})
-      .attr("cy", function(d){return d[3];})
-      .attr("r", 2)
-      .attr("fill", function(d){return d[1];})
-      .attr("stroke", "black")
-      .attr("stroke-width", 1);
-
-    /*
-    glin.selectAll('circle')
-      .data(li)
-      .enter()
-      .append("line")
-      .attr("x1",function(d){return d[0];})
-      .attr("x2",function(d){return d[2];})
-      .attr("y1",function(d){return d[1];})
-      .attr("y2",function(d){return d[3];})
-      .style("stroke",function(d){return d[4];})
-      .style("stroke-width", 3);
-    */
-    
-  }
 
 
-
-
-  //concnetric circlcle End
-
-  //Binary : inlier(0)=green, outlier(1)=red, adding point(-1)=purple
+  //Binary : inlier(0)=green, outlier(1)=red, adding inlier point(-1), adding outlier(-2)
   
   //category option2: inlier(2~13)=each color, outlier(1)=red, adding inlier point(-1), adding outlier(-2)####
   var C=d3.scaleOrdinal()
@@ -885,7 +806,7 @@ const App = () => {
   //LABEL
   let colorLabelName=d3.scaleOrdinal()
   .domain(["0", "1", "-1","-2","-3","2","3","4","5","6","7","8","9","10","11","12","13"])
-  .range([ "inlier","outlier","added inlier","added outlier","misclassification",'astro-ph' ,'cond-mat', 'cs' ,'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th', 'math', 'other' ,'physics' ,'quant-ph'])
+  .range([ "inlier","outlier","added inlier","added outlier","seleted point",'astro-ph' ,'cond-mat', 'cs' ,'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th', 'math', 'other' ,'physics' ,'quant-ph'])
   
   //label enter
   let svgL = d3.select(svgRefL.current).attr("width", w).attr("height", h)
@@ -904,7 +825,7 @@ const App = () => {
   legend.append("text")
     .attr("x",  30)
     .attr("y", 4)
-    .attr("dy", ".35em")
+    .attr("dy", ".35em") 
     .style("text-anchor", "start")
     .text(function(d) { return colorLabelName(d.toString()); });
 
@@ -1011,7 +932,7 @@ svgL.selectAll("text")
        console.log(temp);  
        console.log(history);
        var hisarr = [];
-       var newhisarr = [];
+       
        var ind = -100;
        for(var i=0; i<history[history.length- 1].length; i++)
        {
@@ -1020,39 +941,24 @@ svgL.selectAll("text")
            console.log("Match Found Hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
            ind = i;
            break;
-         } 
+         }  
        }
        for(var j=history.length-1; j>-1;j--)
        {
-         if(history[j].length>= ind)
+        if((history[j].length>= ind)&&(hisarr.length<GlobalNumFrame))
          {
-          
-           hisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
+          console.log(history[j].length, ind, hisarr.length, history[j][ind]);
+          if(history[j][ind].length >= 3)
+           {hisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);}
          }
          else
          { 
+          console.log(history[j].length, ind, hisarr.length, history[j][ind]);
            break;
          }
        }
        funcline(hisarr);
      //  console.log(hisarr);
-     for(var j=history.length-1; j>-1;j--)
-       {
-         if((history[j].length>= ind)&&(newhisarr.length<GlobalNumFrame))
-         {
-          console.log("newhisarr.length",newhisarr.length)
-          
-           newhisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
-         }
-         else
-         { 
-           break; 
-         }
-       }
-       newhisarr.reverse();
-       //console.log("newhisarr",newhisarr);
-       funcsvg(newhisarr);
-
      })
      .on('click', function(){
        d3.select(this).attr('stroke', '#000').attr('stroke-width', 4);
@@ -1082,7 +988,7 @@ svgL.selectAll("text")
              console.log("----------------HEREEEEEEEEE--------------");
              d3.select(this).attr('fill','red');
              d3.select(this).attr('opacity', 0.5);
-             break;
+             break; 
            } 
            else
            { 
@@ -1182,7 +1088,7 @@ const AreaLasso=() => {
     }
  
     function dragStart() {
-        svgH.selectAll("*").remove();
+        svg4.selectAll("*").remove();
         coords = [];
         //lassocircles.attr("fill", "steelblue");
         d3.select("#lasso").remove();
@@ -1217,23 +1123,7 @@ const AreaLasso=() => {
             }
         });
 
-        for(var i=0; i<selectedDots.length;i++)
-        {
-          let hisarr2 = [];
-          var ind = i;
-          for(var j=history.length-1; j>-1;j--)
-          {
-            if(history[j].length>= ind)
-            {
-              hisarr2.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
-            }
-            else
-            { 
-              break;
-            }
-          }   
-          funcline(hisarr2);         
-        } 
+        
 
         console.log(`lasso select index: ${selectedDots}`);
        
@@ -1253,12 +1143,12 @@ const AreaLasso=() => {
                 HeatFinal.push([myGroups[i], myVars[ii] ,cc])}
             }
           }
-          console.log("인덱스데이터",xlist[ii],ylist[ii],myVars[ii])
+          
           HeatPoint.push([xlist[ii],ylist[ii],myVars[ii]])
 
         }
         console.log("HeatFinal:",HeatFinal)
-        HeatMap(HeatFinal)
+        HeatMap(HeatFinal,selectedDots.length,history.length)
         setheatData(prevState => ({
           ...prevState,
           data:  HeatPoint,
@@ -1274,6 +1164,11 @@ const AreaLasso=() => {
         .on("end", dragEnd);
 
     d3.select("#chart").call(drag); 
+    svg.on('click', function(){
+      
+      svg4.selectAll("*").remove();
+      
+    }) 
   }
   
   //
@@ -1392,51 +1287,42 @@ const AreaLasso=() => {
   })
    }
 
-  const changeWidth = (event) => {
+   const changeWidth = (event) => {
     setWidth(event.target.value);
-    console.log("event.target.value",event.target.value)
     
-    const sliderFullDATA = history.slice(-1)[0];
-            
-    console.log("sliderFullDATA SIZE :",sliderFullDATA)  
-    console.log("clicks:",clicks)
-    console.log("GlobalNumFrame :",GlobalNumFrame)
     
-      let startTrain=0;
-      let endTrain=0;
-        if ((clicks)>GlobalNumFrame){   
-          
-          startTrain=last_index[last_index.length-GlobalNumFrame-1];
-          endTrain=last_index[last_index.length-GlobalNumFrame-1+(event.target.value)* 1 ];
-          
-          setsliderInd(GlobalNumFrame+1)
-          setsliderText("")
-          setsliderText2(`${GlobalNumFrame} Frames: ${(event.target.value)* 1 } out of ${GlobalNumFrame}`)
-          slidersetData(prevState => ({
-            ...prevState,
-            sliderFullData: sliderFullDATA.slice(startTrain,endTrain),
-  
-        }))
-            
-        }
-        else{
-        
-          const sliderindexList=[...last_index]
-          sliderindexList.unshift(0)
-          console.log("last_index :",last_index)
-          console.log("sliderindexList :",sliderindexList)
-          setsliderText(`${clicks} testing frame < ${GlobalNumFrame} Frames (${GlobalNumFrame-clicks} needed more)`)
-          setsliderInd(clicks)
-          setsliderText2(`${clicks} Frames: ${(event.target.value)* 1 + 1} out of ${clicks} `)
-         
+    const sliderFullDATA = history.slice(-1)[0]; 
+    let startTest=0;
+    let endTest=0;
+    const sliderindexList=[...last_index]
+    sliderindexList.push(data.FullData.length)
     
-          slidersetData(prevState => ({
-          ...prevState,
-          sliderFullData: sliderFullDATA.slice(0,sliderindexList[(event.target.value)* 1+1]),
-
-      }))
-  
+    if (sliderindexList.length<GlobalNumFrame){
+      setsliderText(`${clicks+1} testing frame < ${GlobalNumFrame} Frames (${GlobalNumFrame-clicks-1} needed more)`)  
+      setsliderText2(`${clicks+1} Frames: ${(event.target.value)* 1 + 1} out of ${clicks+1} `)
+      
+      setsliderInd(clicks+1)
+      startTest=0
+      endTest=sliderindexList[(event.target.value)* 1]
+      
     }
+    if (sliderindexList.length>=GlobalNumFrame){
+      setsliderText(``)
+      setsliderText2(`${GlobalNumFrame} Frames: ${(event.target.value)* 1 + 1} out of ${GlobalNumFrame} `)
+      
+      setsliderInd(GlobalNumFrame)
+    
+      startTest=sliderindexList[sliderindexList.length-GlobalNumFrame-1]
+      endTest=sliderindexList[sliderindexList.length-GlobalNumFrame+(event.target.value)* 1]
+    }
+    console.log("startTest:",startTest)
+    console.log("endTest:",endTest)
+    slidersetData(prevState => ({
+    ...prevState,
+    sliderFullData: sliderFullDATA.slice(startTest,endTest),
+
+  }))
+
   };
 
   const changeWidth1 = (event) => {
@@ -1452,7 +1338,7 @@ const AreaLasso=() => {
       setsliderText1(event.target.value);
     }
     if ((event.target.value)* 1==0){
-      console.log("Default") 
+      console.log("Default")  
       FullData= ''
       setsliderText1("Default");
     }
@@ -1582,7 +1468,7 @@ const AddingPoints=() => {
   }
   else{
     IsAdding=true;    
-  
+   
     if ((addNum+1)%2===1){  
       setaddColor("red")}
     else{setaddColor("black")}
@@ -1614,7 +1500,8 @@ const AddingPoints=() => {
 //adding outlier points start
 const AddingPoints2=() => {
   if (data.FileName[0]==='arxiv_articles_UMAP.csv'){
-    IsAdding2=true;    
+    IsAdding2=true;   
+    AddingPointsList2.push([-1,-1,-1,-1],[-1,-1,-1,-1]); 
     
     if ((addNum2+1)%2===1){  
       setaddColor2("red")}
@@ -1680,7 +1567,8 @@ const AddingPoints2=() => {
     setaddNum2(addNum2+1)
   }
   else{
-      IsAdding2=true;    
+      IsAdding2=true;
+      AddingPointsList2.push([-1,-1,-1],[-1,-1,-1]);    
     
     if ((addNum2+1)%2===1){  
       setaddColor2("red")}
@@ -1751,151 +1639,149 @@ const CatAdd = (value) => {
   setCatAddName(value) 
 };
 
-  return (
-    <div style={{ margin: 10 ,width:"700",height:"600"}}>
+return (
+  <div style={{ margin: 10 ,width:"700",height:"600"}}>
 
-      <Layout style={{  backgroundColor:'white',borderColor: "black" }}>
-        <Sider width={ "350"}  style={{backgroundColor:'OldLace',marginLeft: 10,marginRight: 20}}>  
-          <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 30,marginRight: 30}}>Outlier Detection and Monitoring<br></br> for Streaming data</p>
-              <Content style={{ height:  "100%"}}>
-              <Divider />
+    <Layout style={{ height:620 , backgroundColor:'white',borderColor: "black" }}>
+      <Sider width={ "350"}  style={{backgroundColor:'OldLace',marginLeft: 10,marginRight: 20}}>  
+        <p style={{fontWeight:'bold',fontSize: "16px",color: "DimGrey",marginLeft: 30,marginRight: 30}}>Outlier Detection and Monitoring<br></br> for Streaming data</p>
+            <Content style={{ height:  "100%"}}>
+            <Divider />
 
-                <SliderOk/> 
+              <SliderOk/> 
 
-                <Button size="small" shape="round" style={{ width:"200px",fontSize: "13px",color: "white", marginLeft: 30,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={SethandleClick}>Updating on Plot</Button>   
-                
-                </Content>
-        </Sider>
-        <Layout style={{ marginTop:5,marginLeft:20,backgroundColor:'White'}}>
-            <Content style={{ width: 500}}  >
-              <div className="container">
-              <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll} >
-                    Check All</Checkbox>
-              <CheckboxGroup options={plainOptions} value={checkedList} onChange={onSingleChange}/>        
-            </div>
-            
-          </Content>
-        <Layout style={{backgroundColor:'White',width: 500,height: 450}}>
-          <svg id="chart" ref={svgRef} />
-        </Layout>
-        
-        <Layout style={{backgroundColor: "white"}}>
-          <svg ref = {svgRef4} />
-        </Layout>
-        <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
-        <svg ref={svgRefH} />
-        </Layout>
-        </Layout>
-      <Sider width={"145"} style={{backgroundColor:'white',marginLeft: 10,marginRight: 30}}>  
-       <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[  Tool Tips  ]</p>        
-       <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginRight: 10,marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
-          Process 
-        </Button>
-        <Drawer title="Process of Test Data" size="large" placement="right" onClose={onClose} open={draweropen}>
-          <h4>{sliderText2}</h4>
-            <h4>{sliderText} </h4>
-          <div className="slidecontainer">
-          <input type='range'  className="slider" id="myRange" onChange={changeWidth}
-            min={0} max={sliderInd-1} step={1} value={width} ></input>
-            <svg ref={svgRef2} />
-          </div>
-
-        </Drawer>
-
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer2}>
-        History
-        </Button>
-        <Drawer title="History" size="large" placement="right" onClose={onClose2} open={draweropen2}>
-            <h4> {sliderText1} plot</h4>
-            <div className="slidecontainer"> 
-            <input type='range'  className="slider" id="myRange1" onChange={changeWidth1}
-              min={0} max={sliderInd1} step={1} value={width1} ></input>
-              <svg ref={svgRef3} />
-            </div>
-        </Drawer>
-        
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: addColor, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints}>
-        Adding Inlier
-        </Button> 
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: addColor2, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints2}>
-        Adding Outlier
-        </Button>
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: deleteColor, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={DeletingPoints}>
-        Deleting Points
-        </Button> 
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: incorrectColor, marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={DotClick}>
-          Dot Selection</Button>
-        <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: 'black', marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={AreaLasso}>Area Selection</Button>
-        <br></br>
-       
-        <p style={{fontWeight:'bold',fontSize: "13px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[ Category Options ]</p>     
-        <Select
-            defaultValue="astro-ph"
-            style={{
-              width: 110,fontSize: "11px",marginLeft: 10,marginRight: 10
-            }}
-            onChange={CatAdd}
-            options={[
-              {
-                value: 'astro-ph',
-                label: 'astro-ph',
-              },
-              {
-                value: 'cond-mat',
-                label: 'cond-mat',
-              },
-              {
-                value: 'cs',
-                label: 'cs',
-              },
-              {
-                value: 'gr-qc',
-                label: 'gr-qc',
-              },
-              {
-                value: 'hep-ex',
-                label: 'hep-ex',
-              },
-              {
-                value: 'hep-lat',
-                label: 'hep-lat',
-              },
-              {
-                value: 'hep-ph',
-                label: 'hep-ph',
-              },
-              {
-                value: 'hep-th',
-                label: 'hep-th',
-              },
-              {
-                value: 'math',
-                label: 'math',
-              },
-              {
-                value: 'other',
-                label: 'other',
-              },
-              {
-                value: 'physics',
-                label: 'physics',
-              },
-              {
-                value: 'quant-ph',
-                label: 'quant-ph',
-              },
+              <Button size="small" shape="round" style={{ width:"200px",fontSize: "13px",color: "white", marginLeft: 30,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={SethandleClick}>Updating on Plot</Button>   
               
-            ]}
-          />
-        <br></br>
-        <br></br>
-        <svg ref={svgRefL} />
+              </Content>
       </Sider>
-      
+      <Layout style={{ marginTop:5,marginLeft:20,backgroundColor:'White'}}>
+          <Content style={{ width: 500}}  >
+            <div className="container">
+            <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll} >
+                  Check All</Checkbox>
+            <CheckboxGroup options={plainOptions} value={checkedList} onChange={onSingleChange}/>        
+            </div>
+          
+          </Content>
+          <Layout style={{backgroundColor:'White',width: 500,height: 500}}>
+            <svg id="chart" ref={svgRef} />
+          </Layout>
+          
+          <Layout style={{backgroundColor: "white"}}>
+            <svg ref = {svgRef4} />
+          </Layout>
+  
       </Layout>
+    <Sider width={"145"} style={{backgroundColor:'white',marginLeft: 10,marginRight: 30}}>  
+     <p style={{fontWeight:'bold',fontSize: "14px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[  Tool Tips  ]</p>        
+     <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10,  marginRight: 10,marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer}>
+        Process 
+      </Button>
+      <Drawer title="Process of Test Data" size="large" placement="right" onClose={onClose} open={draweropen}>
+        <h4>{sliderText2}</h4>
+          <h4>{sliderText} </h4>
+        <div className="slidecontainer">
+        <input type='range'  className="slider" id="myRange" onChange={changeWidth}
+          min={0} max={sliderInd-1} step={1} value={width} ></input>
+          <svg ref={svgRef2} />
+        </div>
+
+      </Drawer>
+
+      <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: "white", marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "black", borderColor: "black" }} onClick={showDrawer2}>
+      History
+      </Button>
+      <Drawer title="History" size="large" placement="right" onClose={onClose2} open={draweropen2}>
+          <h4> {sliderText1} plot</h4>
+          <div className="slidecontainer"> 
+          <input type='range'  className="slider" id="myRange1" onChange={changeWidth1}
+            min={0} max={sliderInd1} step={1} value={width1} ></input>
+            <svg ref={svgRef3} />
+          </div>
+      </Drawer>
       
-    </div>
-  );
+      <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: addColor, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints}>
+      Adding Inlier
+      </Button> 
+      <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: addColor2, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={AddingPoints2}>
+      Adding Outlier
+      </Button>
+      <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: deleteColor, marginLeft: 10, marginRight: 10, marginTop: 5 ,background: "white", borderColor: "black" }} onClick={DeletingPoints}>
+      Deleting Points
+      </Button> 
+      <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: incorrectColor, marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={DotClick}>
+        Dot Selection</Button>
+      <Button size="small" shape="round" style={{ width:"120px",fontSize: "13px",color: 'black', marginLeft: 10, marginRight: 10,  marginTop: 5 ,background: "OldLace", borderColor: "black" }} onClick={AreaLasso}>Area Selection</Button>
+      <br></br>
+     
+      <p style={{fontWeight:'bold',fontSize: "13px",color: "DimGrey",marginLeft: 10,marginRight: 10}}>[ Category Options ]</p>     
+      <Select
+          defaultValue="astro-ph"
+          style={{
+            width: 110,fontSize: "11px",marginLeft: 10,marginRight: 10
+          }}
+          onChange={CatAdd}
+          options={[
+            {
+              value: 'astro-ph',
+              label: 'astro-ph',
+            },
+            {
+              value: 'cond-mat',
+              label: 'cond-mat',
+            },
+            {
+              value: 'cs',
+              label: 'cs',
+            },
+            {
+              value: 'gr-qc',
+              label: 'gr-qc',
+            },
+            {
+              value: 'hep-ex',
+              label: 'hep-ex',
+            },
+            {
+              value: 'hep-lat',
+              label: 'hep-lat',
+            },
+            {
+              value: 'hep-ph',
+              label: 'hep-ph',
+            },
+            {
+              value: 'hep-th',
+              label: 'hep-th',
+            },
+            {
+              value: 'math',
+              label: 'math',
+            },
+            {
+              value: 'other',
+              label: 'other',
+            },
+            {
+              value: 'physics',
+              label: 'physics',
+            },
+            {
+              value: 'quant-ph',
+              label: 'quant-ph',
+            },
+            
+          ]}
+        />
+      <br></br>
+      <br></br>
+      <svg ref={svgRefL} />
+    </Sider>
+    
+    </Layout>
+    
+  </div>
+);
 };
 
 export default App;
