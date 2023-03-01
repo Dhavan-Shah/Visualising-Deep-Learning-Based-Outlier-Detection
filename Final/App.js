@@ -789,7 +789,105 @@ const App = () => {
 
   }
 
+  function funcsvg(arr)
+  {
+    console.log("Entered funcsvg");
+    console.log(arr);
+    var gsvg = svg4.append('g');
+    var glin = svg4.append('g');
+    var lindat = [];
+    var dataLevel = [];
+    //y = 10, 140
+    //x = 120, 220
+    var x = 300;
+    var x_1 = [];
+    //var x_2 = [];
+    for(var i=0; i<11; i++) 
+    {
+      if(i<arr.length)
+      {
+        x_1.push((i*100)/(arr.length) + x);
+        if(arr[i][2] == 0)
+        {
+          dataLevel.push([(i+1)*10, "green", (i*100)/(arr.length) + x, 10]);
+          //lindat.push([(i*100)/(arr.length) + x, 10, "green"]);
+          console.log("Green Execution");
+        }
+        else
+        {
+          dataLevel.push([(i+1)*10, "red", (i*100)/(arr.length) + x, 110]);
+          //lindat.push([(i*100)/(arr.length) + x, 140, "red"]);
+          console.log("Red Execution");
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+    /*var li = [];
+    for(var k=0; k<lindat.length-1;k++)
+    {
+      li.push([lindat[k][0], lindat[k][1], lindat[k+1][0], lindat[k+1][1], lindat[k+1][2]]);
+    }
+    
+    console.log(li);*/
+    console.log(dataLevel);
+    dataLevel.reverse();
+    console.log(dataLevel);
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", 40)
+      .attr("cy", 60)
+      .attr("r", function(d){return d[0];})
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+    
+    /*
+    glin.selectAll('circle')
+      .data(x_1)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d})
+      .attr("x2",function(d){return d})
+      .attr("y1", 10)
+      .attr("y2", 140)
+      .style("stroke", "black")
+      .style("stroke-width", 5); */
 
+    gsvg.selectAll('circle')
+      .data(dataLevel)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d){return d[2];})
+      .attr("cy", function(d){return d[3];})
+      .attr("r", 2)
+      .attr("fill", function(d){return d[1];})
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    /*
+    glin.selectAll('circle')
+      .data(li)
+      .enter()
+      .append("line")
+      .attr("x1",function(d){return d[0];})
+      .attr("x2",function(d){return d[2];})
+      .attr("y1",function(d){return d[1];})
+      .attr("y2",function(d){return d[3];})
+      .style("stroke",function(d){return d[4];})
+      .style("stroke-width", 3);
+    */
+    
+  }
+
+
+
+
+  //concnetric circlcle End
 
   //Binary : inlier(0)=green, outlier(1)=red, adding inlier point(-1), adding outlier(-2)
   
@@ -928,7 +1026,7 @@ svgL.selectAll("text")
        console.log(temp);  
        console.log(history);
        var hisarr = [];
-       
+       var newhisarr = [];
        var ind = -100;
        if(history.length == 0)
        {
@@ -966,6 +1064,22 @@ svgL.selectAll("text")
        }
        funcline(hisarr);
      //  console.log(hisarr); 
+     for(var j=history.length-1; j>-1;j--)
+     {
+       if((history[j].length>= ind)&&(newhisarr.length<GlobalNumFrame))
+       {
+        console.log("newhisarr.length",newhisarr.length)
+        
+         newhisarr.push([history[j][ind][0],history[j][ind][1],history[j][ind][2],ind]);
+       }
+       else
+       { 
+         break; 
+       }
+     }
+     newhisarr.reverse();
+     //console.log("newhisarr",newhisarr);
+     funcsvg(newhisarr);
       }
      })
      .on('click', function(){
