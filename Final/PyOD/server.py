@@ -88,41 +88,6 @@ def train_mod(model, X, X_test, threshold = 0):
     return out, m, score
 
 
-    
-
-"""
-X = pd.read_csv('E:/Python/Projects/IForest/deep-iforest-main/data/tabular/shuttle_16.csv').to_numpy()
-data_size = len(X)
-i = 100
-val = [] 
-mval = [] 
-while True:
-    if i<data_size: 
-        print(i, data_size)
-        if i+100>data_size:
-           print(i, data_size, "here")
-           out, m = train_mod(dif, X[i-500: data_size], X)
-           print("Last Iteration")
-           print(out)
-           print(m)
-        else:
-            print(i, data_size)
-            out, m = train_mod(dif, X[max(0, i-500):i], X[i: min(i+100, data_size)])
-            print("New iteration")
-            print(out)
-            print(m)
-        val.append(len(out))
-        mval.append(m)
-             
-    else:
-        print("Breaking the loop")
-        break
-    i += 100 
-print(val)
-print(mval)
-"""
-
-
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -166,10 +131,6 @@ def BackendData():
         FileName=request.form.get('FileName')
         print("post, Filename : ",FileName)
 
-        #data  = data1
-        #print("Data1: ", data)
-        print("_________________________________________")
-        print("Data2 : ", data)
         #data = data1
         data_short=data
         XYData = np.delete(data_short, -1, axis=1)
@@ -228,15 +189,10 @@ def BackendData():
             print("XY :",XY)   
 
             for i in range(len(XY)):
-                #print("bef:" , data_short[int(XY[i][3])])                                        
-                print("XY[i] : ",XY[i], "data_short[int(XY[i][3])][2]:",data_short[int(XY[i][3])][2], "XY[i][2]:",XY[i][2])
                 data_short[int(XY[i][3])][2] = int(XY[i][2])
-                inp = int(input())
-                print(inp)
                 print(data_short[int(XY[i][3])], "  ", int(XY[i][2]))
                 dif2.fit(pd.DataFrame([data_short[int(XY[i][3])][0], data_short[int(XY[i][3])][1], int(XY[i][2])]).to_numpy())
-                print("Done")
-                #print("aft: " , data_short[int(XY[i][3])])
+
                     
         else:
             print("No points selected")
@@ -261,8 +217,8 @@ def BackendData():
                 cd.append(int(c[0]))
                 dd.append(float(d))
                 t += 1
-            print("ad :",ad)
-            print("Del-------a:" , a)
+            #print("ad :",ad)
+            #print("Del-------a:" , a)
             for j in range(int(a)+1):
                 Del.append([0,0,0,0])
                 for k in range(4):
@@ -273,11 +229,11 @@ def BackendData():
             print("Del :",Del)  
 
             for i in range(len(Del)):
-                print("bef:" , data_short[int(Del[i][3])])                                        
-                print("Del[i] : ",Del[i], "data_short[int(Del[i][3])][2]:",data_short[int(Del[i][3])][2], "Del[i][2]:",Del[i][2])
+                #print("bef:" , data_short[int(Del[i][3])])                                        
+                #print("Del[i] : ",Del[i], "data_short[int(Del[i][3])][2]:",data_short[int(Del[i][3])][2], "Del[i][2]:",Del[i][2])
                 data_short[int(Del[i][3])] = -1 #int(XY[i][2])
                 data_short[int(Del[i][3])][2] = 1
-                print("aft: " , data_short[int(Del[i][3])])
+                #print("aft: " , data_short[int(Del[i][3])])
                     
         else:
             print("No points selected")
@@ -303,22 +259,19 @@ def BackendData():
                 ca.append(int(c[0]))
                 da.append(float(d))
                 t += 1
-            print("aa :",aa)
-            print("AdD-------a:" , a)
+            #print("aa :",aa)
+            #print("AdD-------a:" , a)
             for j in range(int(a)):
                 AdD.append([0,0,0])
                 for k in range(3):
                     #print(j,k)
                     AdD[j][k] = da[j*3+k]
-            print(AdD)
+            #print(AdD)
             AdD.pop(0)
             AdD.pop(0)
             #AdD.pop(-1)
             print("AdD :",AdD)  
-
-            #for i in range(len(AdD)):                                      
-            #    print("AdD[i] : ",AdD[i], "data_short[int(AdD[i][3])][2]:",data_short[int(AdD[i][3])][2], "AdD[i][2]:",AdD[i][2])
-                  
+     
         else:
             print("No points selected")
             AdD = -1
