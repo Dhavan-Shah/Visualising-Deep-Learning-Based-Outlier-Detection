@@ -2,28 +2,30 @@ import pandas as pd
 import numpy as np
 from difmain.algorithms.dif import DIF
 
+
+#Path to Dataset Files
 data = pd.read_csv("E:/Python/Projects/IForest/deep-iforest-main/data/HR_diagram.csv").to_numpy()
 data1 = pd.read_csv("E:/Python/Projects/IForest/deep-iforest-main/data/HR_diagram.csv").to_numpy()
 data2 = pd.read_csv("E:/Python/Projects/IForest/deep-iforest-main/data/arxiv_articles_UMAP.csv").to_numpy()
-#data=pd.read_csv("C:/Users/minjo/Downloads/HR_diagram.csv").to_numpy()
 
 
 print("Done")
 model_configs = {'n_ensemble':50, 'n_estimators':6}
+#DIF Model for Binary Dataset 
 dif = DIF(**model_configs)
 
+
+#DIF Model for Categorical Dataset
 ctmod = []
 for i in range(12):
     ctmod.append(DIF(**model_configs))
-    #ctmod[i] = DIF
     print("Model ", i, " created")
-print(ctmod)
 
+
+#Model Training and Testing
 def train_mod(model, X, X_test, threshold = 0):
-    print(X)
     model.fit(X)
     score = model.decision_function(X_test)
-    #print(score)
     m = max(score)
     out = []
     for i in range(len(score)): 
@@ -33,56 +35,18 @@ def train_mod(model, X, X_test, threshold = 0):
         else:
             if score[i]>threshold:
                 out.append(score[i]) 
-    #print(out)
     print(len(out))
-    #print(m)
     print("okay")
     return out, m, score
-
-
-    
-
-"""
-X = pd.read_csv('E:/Python/Projects/IForest/deep-iforest-main/data/tabular/shuttle_16.csv').to_numpy()
-data_size = len(X)
-i = 100
-val = [] 
-mval = [] 
-while True:
-    if i<data_size: 
-        print(i, data_size)
-        if i+100>data_size:
-           print(i, data_size, "here")
-           out, m = train_mod(dif, X[i-500: data_size], X)
-           print("Last Iteration")
-           print(out)
-           print(m)
-        else:
-            print(i, data_size)
-            out, m = train_mod(dif, X[max(0, i-500):i], X[i: min(i+100, data_size)])
-            print("New iteration")
-            print(out)
-            print(m)
-        val.append(len(out))
-        mval.append(m)
-             
-    else:
-        print("Breaking the loop")
-        break
-    i += 100 
-print(val)
-print(mval)
-"""
-
 
 
 from flask import Flask, request
 from flask_cors import CORS
  
+ 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 data_short=data[0:10000]
-#print(data_short)
   
 XYData = np.delete(data_short, -1, axis=1)
 color_list=data_short[:,-1]
@@ -96,7 +60,6 @@ last_index = []
 
 FileName="HR_diagram.csv"
 
-#print(color_list) 
 
 @app.route("/BackendData", methods=['GET','POST'])
 def BackendData():
@@ -113,8 +76,7 @@ def BackendData():
         FileName=request.form.get('FileName')
         print("post, Filename : ",FileName)
         if (FileName=="HR_diagram.csv"):
-            #Binary : inlier(0)=green, outlier(1)=red, adding point(-1)=purple
-            #data=pd.read_csv("E:/Python/Projects/IForest/deep-iforest-main/data/HR_diagram.csv").to_numpy()
+
             data = data1
             data_short=data[0:10000]
             XYData = np.delete(data_short, -1, axis=1)
@@ -132,17 +94,13 @@ def BackendData():
             XYDatalst = list(XYData.split('&')) 
             
             BatchSize = int(request.form.get('BatchSize'))
-            #BatchSize=BatchSize+int(request.form.get('BatchSize'))
         
             Threshold=float(request.form.get('Threshold'))
-            Nbatch=int(request.form.get('Nbatch'))
-            #last_index = request.form.get('last_index') 
+            Nbatch=int(request.form.get('Nbatch')) 
             clicks = int(request.form.get('clicks'))
-            #print(last_index) 
             print(XYDatalst)
-            #if clicks != 1:
             
-            #Changing Outlier/Inlier 
+            #Changing Outlier to Inlier or Inlier to Outlier 
             if len(XYDatalst)>8:
                 print("XYDatalst :",XYDatalst)             
                 XY = []
@@ -166,23 +124,19 @@ def BackendData():
                 for j in range(int(a)+1):
                     XY.append([0,0,0,0])
                     for k in range(4):
-                        #print(j,k)
                         XY[j][k] = dl[j*4+k] 
                 XY.pop(0)
                 XY.pop(0)
                 print("XY :",XY)  
 
-                for i in range(len(XY)):
-                    #print("bef:" , data_short[int(XY[i][3])])                                        
-                    print("XY[i] : ",XY[i], "data_short[int(XY[i][3])][2]:",data_short[int(XY[i][3])][2], "XY[i][2]:",XY[i][2])
+                for i in range(len(XY)):                                      
                     data_short[int(XY[i][3])][2] = int(XY[i][2])
-                    #print("aft: " , data_short[int(XY[i][3])])
                     
             else:
                 print("No points selected")
                  
                 
-            #Deletig Data  
+            #Deletig Points 
             if len(DeletingData) > 8:
                 print("DeletingData :",DeletingData)             
                 Del = []
@@ -213,11 +167,8 @@ def BackendData():
                 print("Del :",Del)  
 
                 for i in range(len(Del)):
-                    print("bef:" , data_short[int(Del[i][3])])                                        
-                    print("Del[i] : ",Del[i], "data_short[int(Del[i][3])][2]:",data_short[int(Del[i][3])][2], "Del[i][2]:",Del[i][2])
                     data_short[int(Del[i][3])] = -1 #int(XY[i][2])
                     data_short[int(Del[i][3])][2] = 1
-                    print("aft: " , data_short[int(Del[i][3])])
                     
             else:
                 print("No points selected")
@@ -253,12 +204,8 @@ def BackendData():
                 print(AdD)
                 AdD.pop(0)
                 AdD.pop(0)
-                #AdD.pop(-1)
                 print("AdD :",AdD)  
 
-                #for i in range(len(AdD)):                                      
-                #    print("AdD[i] : ",AdD[i], "data_short[int(AdD[i][3])][2]:",data_short[int(AdD[i][3])][2], "AdD[i][2]:",AdD[i][2])
-                  
             else:
                 print("No points selected")
                 AdD = -1
@@ -276,6 +223,7 @@ def BackendData():
             l.append(n)
             num=sum(l)   
             # data_put -> Train Data
+            #data_tr -> Test Data
             print("Start Index Train : " , max(last_index[-1]-BatchSize, 0))
             print("End Index Train :", min(last_index[-1], len(data_short)))
             print("Start Index Test : " , max(min(last_index[-1] - (Nbatch-1)*BatchSize, len(data_short)), 0))
@@ -286,26 +234,27 @@ def BackendData():
             color_list_put=data_put[:,-1]
             print("n is ",num)
             
+            #Training and Testing Model 
             out, m, score = train_mod(dif,data_put, data_tr, Threshold)
             outa = []
             ma = 0
             scorea = []
+            
+            #Training Model on Added Data Points
             if AdD != -1:
-                
                 AdDpt = pd.DataFrame(AdD).to_numpy()
-                
                 print(AdDpt)
-                
-                
                 dif.fit(AdDpt)
-            #print(outa, ma, scorea)
-            #print(out)
+                
+                
+            
             print(len(out)) 
             print(m)
             print(len(score), len(data_tr))  
             data_put = data_tr
-            if Threshold == 0:
-                print("This works")  
+            
+            
+            # Classifying the Data as Outliers/ Inliers on the basis of Threshold
             for i in range(len(data_tr)):   
                 if Threshold == 0: 
                     if m - score[i]<0.06:
@@ -316,7 +265,6 @@ def BackendData():
                 
             
             l.append(BatchSize)
-            #data_put=data[0:sum(l)]
             XYData_put = np.delete(data_put, -1, axis=1)
             color_list_put=data_put[:,-1]
             print("BatchSize is ",BatchSize) 
@@ -380,15 +328,10 @@ def BackendData():
             AddingData =request.form.get('AddingData')
             AddingData = list(AddingData.split('&'))
             print("AddingData:",AddingData)
-
             XYData=request.form.get('XYData')
-            
             color_list =request.form.get('color_list')
             XYDatalst = list(XYData.split('&'))
-            
             BatchSize = int(request.form.get('BatchSize'))
-            #BatchSize=BatchSize+int(request.form.get('BatchSize'))
-            
             Threshold=float(request.form.get('Threshold'))
             Nbatch=int(request.form.get('Nbatch'))
             #last_index = request.form.get('last_index')
@@ -396,7 +339,9 @@ def BackendData():
             #print(last_index) 
             #if clicks != 1: 
            
-                    
+                
+                
+            #Changing Outlier to Inlier or Inlier to Outlier    
             if len(XYDatalst)>10: 
                 print("XYDatalst :",XYDatalst)             
                 XY = []
@@ -428,16 +373,13 @@ def BackendData():
 
                 for i in range(len(XY)):
                     if int(XY[i][4]) != 1:
-                        print("bef:" , data_short[int(XY[i][3])])                                        
-                        print("XY[i] : ",XY[i], "data_short[int(XY[i][3])][2]:",data_short[int(XY[i][3])][2], "XY[i][2]:",XY[i][2])
                         data_short[int(XY[i][3])][2] = int(XY[i][2])
-                        print("aft: " , data_short[int(XY[i][3])])
                     
             else:
                 print("No points selected")    
                  
                 
-            #Deletig Data  
+            #Deletig Data Points  
             if len(DeletingData) > 8:
                 print("DeletingData :",DeletingData)             
                 Del = []
@@ -468,11 +410,9 @@ def BackendData():
                 print("Del :",Del)  
 
                 for i in range(len(Del)):
-                    print("bef:" , data_short[int(Del[i][3])])                                        
-                    print("Del[i] : ",Del[i], "data_short[int(Del[i][3])][2]:",data_short[int(Del[i][3])][2], "Del[i][2]:",Del[i][2])
-                    data_short[int(Del[i][3])] = -1 #int(XY[i][2])
+                    data_short[int(Del[i][3])] = -1 
                     data_short[int(Del[i][3])][2] = 1
-                    print("aft: " , data_short[int(Del[i][3])])
+
                     
             else:
                 print("No points selected")
@@ -517,6 +457,7 @@ def BackendData():
                     add_indx.append([])
                 for f in range(len(AdD)):
                     val = pd.DataFrame([AdD[f][0], AdD[f][1], AdD[f][3]]).to_numpy()
+                    #Training the model on Added Points
                     ctmod[int(AdD[f][2]) - 2].fit(val)
                     print("model ", AdD[f][2], ": val :", AdD[f])
                       
@@ -536,6 +477,7 @@ def BackendData():
             l.append(n)  
             num=sum(l)   
             # data_put -> Train Data
+            # data_tr -> Test Data
             print("Start Index Train : " , max(last_index[-1]-BatchSize, 0))
             print("End Index Train :", min(last_index[-1], len(data_short)))
             print("Start Index Test : " , max(min(last_index[-1] - (Nbatch-1)*BatchSize, len(data_short)), 0))
@@ -545,7 +487,6 @@ def BackendData():
             XYData_put = np.delete(data_put, -1, axis=1)
             color_list_put=data_put[:,-1]
             print("n is ",num)
-            #data_put[0][2] = 100
 
             
             train_indx = []
@@ -581,6 +522,7 @@ def BackendData():
                 #print("Test", data_test)
                 m = 1
                 score = [0  for _ in range(len(data_test))]
+                #Traingin Different Model for each category
                 if len(data_train) != 0 and len(data_test) != 0:
                     out, m, score = train_mod(ctmod[i],data_train, data_test, 0)
                     print(m, i)
@@ -588,7 +530,7 @@ def BackendData():
                 
                 
                 for j in range(len(data_test)): 
-
+                    #Using Relative Threshold for Classifying Points as Inliers/Outliers
                     if m - score[j]<0.06:
                         data_test[j][2] = 1 
                         test_indx[i][j][2] = 1
@@ -604,47 +546,28 @@ def BackendData():
                 co = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                 print(co)
                 it = 0
+                #Updating the Data to its Original sequence
                 while st < ed :
                     
                     if data_short[st][2] != 1:
-                        #print("Data Short :" ,data_short[st])
                         cv = data_short[st][2] - 2
-                        #print(test_indx[cv][0])
                         if len(test_indx[cv]) > co[cv] and data_short[st][0] == test_indx[cv][co[cv]][0] and data_short[st][1] == test_indx[cv][co[cv]][1]:
-                            #print("MAAAAATCHHHHHHH FOUNDDDDDDDDDDDDD")
                             data_short[st][2] = cv+2
                             it += 1
                             co[cv] += 1
-                        #if data_short[st][0] == test_indx[i][0][0] and data_short[st][1] == test_indx[i][0][1]:
                     else: 
                         
                         for k in range(12):
                             if len(test_indx[k]) > co[k] and data_short[st][0] == test_indx[k][co[k]][0] and data_short[st][1] == test_indx[k][co[k]][1]:
                                 data_short[st][2] = 1
                                 co[k] += 1
-                                #print("MATCH Found") 
                                 it += 1
                                 break
                     st += 1
                 print("it", it)
                 #print(data_short)
                 
-                
-            print("ADD Data: ", AddingData)
-            print("Del Data: ", DeletingData)
-            print("XYData", XYDatalst) 
-            
-         
- 
-                    
-                          
-                #print("TEST DATA CAT: ", data_tr[i][2])
 
-                
-                
-                
-                
-                
                 
                 
             l.append(BatchSize) 
@@ -662,12 +585,8 @@ def BackendData():
             
             
             BackendData={"FullData":data_put.tolist(),"XYData":XYData_put.tolist(),"color_list":color_list_put.tolist(),"Nbatch":[Nbatch],"Threshold":[Threshold],"BatchSize":[sum(l)],"last_index":[last_index], "button_clicks": [clicks],"FileName":[FileName]}
-       
-            
-        
+                       
         return BackendData 
- 
- 
  
  
  
@@ -685,18 +604,11 @@ def BackendData():
                 data_get=data_short[0:min(last_index[-1]+BatchSize, 10000)]
                 
             XYData_get = np.delete(data_get, -1, axis=1)
-            color_list_get=data_get[:,-1] 
-            #print("l is ",sum(l))
-            
-            #print("BatchSize is ",BatchSize) 
-            #print("Threshold is ",Threshold)
-            #print("Nbatch is ",Nbatch) 
+            color_list_get=data_get[:,-1]  
             print("Index is ", last_index)
 
             BackendData={"FullData":data_get.tolist(),"XYData":XYData_get.tolist(),"color_list":color_list_get.tolist(),"Nbatch":[Nbatch],"Threshold":[Threshold],"BatchSize":[sum(l)], "last_index":[last_index],"FileName":[FileName]}
         else:
-            print("카테고리 겟",data_short)
-         #please return category features
             if len(last_index) == 0:
                 last_index.append(BatchSize)
                 data_get=data_short[0:last_index[-1]] 
@@ -706,11 +618,6 @@ def BackendData():
                   
             XYData_get = np.delete(data_get, -1, axis=1) 
             color_list_get=data_get[:,-1] 
-            #print("l is ",sum(l))
-            
-            #print("BatchSize is ",BatchSize)  
-            #print("Threshold is ",Threshold)
-            #print("Nbatch is ",Nbatch) 
             print("Index is ", last_index)
 
             BackendData={"FullData":data_get.tolist(),"XYData":XYData_get.tolist(),"color_list":color_list_get.tolist(),"Nbatch":[Nbatch],"Threshold":[Threshold],"BatchSize":[sum(l)], "last_index":[last_index],"FileName":[FileName]}
